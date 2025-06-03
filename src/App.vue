@@ -1,44 +1,82 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { getFirebaseAuth } from './firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { useUserStore } from './stores/user'
+
+import TheHeader from './components/layout/TheHeader.vue'
+import TheFooter from './components/layout/TheFooter.vue'
+
+const router = useRouter()
+const userStore = useUserStore()
+const isLoading = ref(true)
+
+onMounted(async () => { // Make onMounted async if needed for top-level await, though onAuthStateChanged callback handles async internally
+  const auth = getFirebaseAuth()
+  onAuthStateChanged(auth, async (user) => { // Make the callback async
+    if (user) {
+      const db = getFirestore();
+      const userDocRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        // User document exists, merge Auth data with Firestore data
+        const firestoreData = docSnap.data();
+        userStore.setUser({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || firestoreData.displayName || user.email.split('@')[0],
+          photoURL: user.photoURL || firestoreData.photoURL, // Prefer Auth photoURL if available
+          role: firestoreData.role || 'user', // Default to 'user' if not set
+          subscriptionStatus: firestoreData.subscriptionStatus || 'free',
+          points: firestoreData.points || 0,
+          // ... any other fields from Firestore
+        });
+        // Optionally update last login time
+        await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+      } else {
+        // New user or no document, create one in Firestore
+        const newUserProfile = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email.split('@')[0],
+          photoURL: user.photoURL,
+          role: 'user', // Default role
+          subscriptionStatus: 'free', // Default subscription
+          points: 0,
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+        };
+        await setDoc(userDocRef, newUserProfile);
+        userStore.setUser(newUserProfile); // Set user store with the new profile
+      }
+    } else {
+      userStore.clearUser()
+    }
+    isLoading.value = false
+  })
+})
+
+</script>
+
 <template>
-  <div class="app-container">
-    <AppHeader />
+  <div class="app-wrapper">
+    <TheHeader />
     <main class="main-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <div v-if="isLoading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+      <router-view v-else />
     </main>
-    <AppFooter />
-    <AgeVerificationModal v-if="showAgeVerification" />
+    <TheFooter />
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from './stores/auth'
-import AppHeader from './components/layout/AppHeader.vue'
-import AppFooter from './components/layout/AppFooter.vue'
-import AgeVerificationModal from './components/modals/AgeVerificationModal.vue'
-
-const router = useRouter()
-const authStore = useAuthStore()
-const showAgeVerification = ref(false)
-
-onMounted(async () => {
-  // Check if user has verified age
-  const hasVerifiedAge = localStorage.getItem('age-verified')
-  if (!hasVerifiedAge) {
-    showAgeVerification.value = true
-  }
-  
-  // Initialize auth state
-  await authStore.initAuth()
-})
-</script>
-
-<style lang="scss">
-.app-container {
+<style scoped>
+.app-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -46,20 +84,28 @@ onMounted(async () => {
 
 .main-content {
   flex: 1;
-  padding: 1rem;
-  
-  @media (min-width: 768px) {
-    padding: 2rem;
-  }
+  padding: var(--space-md) 0;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: var(--space-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

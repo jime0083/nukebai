@@ -1,176 +1,272 @@
-<template>
-  <div class="review-card">
-    <div class="review-header">
-      <h3 class="review-title">{{ review.videoTitle }}</h3>
-      <span class="review-id">ID: {{ review.videoId }}</span>
-    </div>
-    
-    <div class="review-reasons">
-      <h4>ヌけない理由:</h4>
-      <ul class="reason-tags">
-        <li v-for="reasonCode in review.reasons" :key="reasonCode" class="reason-tag">
-          {{ getReasonName(reasonCode) }}
-        </li>
-      </ul>
-    </div>
-    
-    <div v-if="showImage && review.imageUrl" class="review-image">
-      <img :src="review.imageUrl" alt="Review thumbnail" />
-    </div>
-    
-    <div class="review-footer">
-      <span class="review-date">{{ formatDate(review.createdAt) }}</span>
-      <router-link :to="{ name: 'review-detail', params: { id: review.id } }" class="view-details">
-        詳細を見る
-      </router-link>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { computed } from 'vue'
-import { useAuthStore } from '../../stores/auth'
+import { useReasonsStore } from '../../stores/reasons'
+import { useUserStore } from '../../stores/user'
 
 const props = defineProps({
   review: {
     type: Object,
     required: true
   },
-  categories: {
-    type: Array,
-    default: () => []
+  showDetails: {
+    type: Boolean,
+    default: false
   }
 })
 
-const authStore = useAuthStore()
+const reasonsStore = useReasonsStore()
+const userStore = useUserStore()
 
-// Show image only for premium users
-const showImage = computed(() => {
-  return authStore.isPremium && props.review.imageUrl
-})
-
-// Get reason name from reason code
-function getReasonName(reasonCode) {
-  const category = props.categories.find(cat => cat.code === reasonCode)
-  return category ? category.displayName : reasonCode
-}
-
-// Format date
-function formatDate(date) {
-  if (!date) return ''
+const formattedDate = computed(() => {
+  if (!props.review.createdAt) return '日付なし'
   
-  // Convert Firestore timestamp to Date if needed
-  const dateObj = typeof date === 'object' && date.toDate ? date.toDate() : date
-  
+  // Firebase timestamp handling
+  const date = props.review.createdAt.toDate ? 
+    props.review.createdAt.toDate() : 
+    new Date(props.review.createdAt)
+    
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
-    month: 'numeric',
+    month: 'short',
     day: 'numeric'
-  }).format(dateObj)
-}
+  }).format(date)
+})
+
+const reasonsList = computed(() => {
+  return reasonsStore.getReasonsByCode(props.review.reasons)
+})
+
+const isLimitedView = computed(() => {
+  // Free users can only see limited info
+  return !userStore.user || 
+         (userStore.subscriptionStatus === 'free' && 
+          userStore.freeUsageCount >= 3)
+})
+
+const reasonsToShow = computed(() => {
+  if (isLimitedView.value && !props.showDetails) {
+    return reasonsList.value.slice(0, 1)
+  }
+  return reasonsList.value
+})
 </script>
 
-<style lang="scss" scoped>
+<template>
+  <div class="review-card" :class="{ 'limited-view': isLimitedView && !showDetails }">
+    <div v-if="isLimitedView && !showDetails" class="premium-overlay">
+      <div class="premium-message">
+        <p>プレミアム会員になって全ての情報を見る</p>
+        <router-link to="/subscription" class="premium-button">プレミアムに登録</router-link>
+      </div>
+    </div>
+    
+    <div class="review-header">
+      <h3 class="review-title">{{ review.videoTitle }}</h3>
+      <span class="review-date">{{ formattedDate }}</span>
+    </div>
+    
+    <div class="review-content">
+      <div class="review-id">
+        <span class="label">動画ID:</span>
+        <span class="value">{{ review.videoId }}</span>
+      </div>
+      
+      <div class="review-reasons">
+        <h4>ヌけない理由:</h4>
+        <ul class="reasons-list">
+          <li v-for="reason in reasonsToShow" :key="reason.code">
+            <span class="reason-label">{{ reason.displayName }}</span>
+            <span class="reason-category">{{ reason.category }}</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div v-if="review.imageUrl && (showDetails || userStore.subscriptionStatus === 'premium')" class="review-image">
+        <img :src="review.imageUrl" alt="レビュー画像" />
+      </div>
+      
+      <div v-if="!showDetails" class="review-actions">
+        <router-link :to="'/review/' + review.id" class="details-button">
+          詳細を見る
+        </router-link>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
 .review-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-md);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
+  margin-bottom: var(--space-lg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-duration) ease,
+              box-shadow var(--transition-duration) ease;
+  position: relative;
+}
+
+.review-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
 }
 
 .review-header {
-  padding: 1.25rem;
-  border-bottom: 1px solid #eee;
+  background-color: var(--color-surface-variant);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .review-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.review-date {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant);
+  margin-left: var(--space-md);
+}
+
+.review-content {
+  padding: var(--space-lg);
 }
 
 .review-id {
-  font-size: 0.875rem;
-  color: #666;
-  display: block;
-}
-
-.review-reasons {
-  padding: 1.25rem;
-  flex-grow: 1;
-  
-  h4 {
-    margin-bottom: 0.75rem;
-    font-weight: 500;
-  }
-}
-
-.reason-tags {
+  margin-bottom: var(--space-md);
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.label {
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+}
+
+.value {
+  font-family: monospace;
+  background-color: var(--color-surface-variant);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+}
+
+.review-reasons h4 {
+  margin-bottom: var(--space-sm);
+  font-size: 1.1rem;
+}
+
+.reasons-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.reason-tag {
-  background-color: #f3e5f5;
-  color: #7E57C2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.review-image {
-  width: 100%;
-  height: 160px;
-  overflow: hidden;
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-}
-
-.review-footer {
+.reasons-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #eee;
-  background-color: #fafafa;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-surface-variant);
 }
 
-.review-date {
-  font-size: 0.875rem;
-  color: #666;
+.reasons-list li:last-child {
+  border-bottom: none;
 }
 
-.view-details {
-  color: #7E57C2;
+.reason-label {
   font-weight: 500;
-  font-size: 0.875rem;
+}
+
+.reason-category {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant);
+  background-color: var(--color-surface-variant);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+}
+
+.review-image {
+  margin-top: var(--space-lg);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.review-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+}
+
+.review-actions {
+  margin-top: var(--space-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.details-button {
+  display: inline-block;
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-sm);
   text-decoration: none;
-  
-  &:hover {
-    text-decoration: underline;
-  }
+  transition: background-color var(--transition-duration) ease;
+}
+
+.details-button:hover {
+  background-color: var(--color-secondary-hover);
+  color: var(--color-on-secondary);
+}
+
+.limited-view {
+  filter: blur(0px);
+  position: relative;
+}
+
+.premium-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  border-radius: var(--border-radius-md);
+}
+
+.premium-message {
+  text-align: center;
+  padding: var(--space-lg);
+}
+
+.premium-message p {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-md);
+}
+
+.premium-button {
+  display: inline-block;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-sm);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color var(--transition-duration) ease;
+}
+
+.premium-button:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-on-primary);
 }
 </style>

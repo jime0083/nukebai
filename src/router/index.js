@@ -1,122 +1,115 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { getFirebaseAuth } from '../services/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
+import { createRouter, createWebHistory } from 'vue-router';
+import { getFirebaseAuth, initializeFirebase } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
-// Page components
-import HomePage from '../views/HomePage.vue'
-import LoginPage from '../views/auth/LoginPage.vue'
-import RegisterPage from '../views/auth/RegisterPage.vue'
-import SearchPage from '../views/reviews/SearchPage.vue'
-import ReviewFormPage from '../views/reviews/ReviewFormPage.vue'
-import ReviewDetailPage from '../views/reviews/ReviewDetailPage.vue'
-import AccountPage from '../views/account/AccountPage.vue'
-import SubscriptionPage from '../views/account/SubscriptionPage.vue'
-import AdminDashboard from '../views/admin/AdminDashboard.vue'
-import NotFoundPage from '../views/NotFoundPage.vue'
+import Home from '../views/Home.vue';
+import Login from '../views/Login.vue';
+import Register from '../views/Register.vue';
+import AgeVerification from '../views/AgeVerification.vue';
+import SubmitReview from '../views/SubmitReview.vue';
+import ReviewDetails from '../views/ReviewDetails.vue';
+import Profile from '../views/Profile.vue';
+import Subscription from '../views/Subscription.vue';
+import NotFound from '../views/NotFound.vue';
+import Search from '../views/Search.vue';
+import { useUserStore } from '../stores/user';
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomePage,
-    meta: { requiresAuth: false }
+    name: 'Home',
+    component: Home,
+    meta: { requiresAge: true }
   },
   {
     path: '/login',
-    name: 'login',
-    component: LoginPage,
-    meta: { requiresAuth: false, guestOnly: true }
+    name: 'Login',
+    component: Login
   },
   {
     path: '/register',
-    name: 'register',
-    component: RegisterPage,
-    meta: { requiresAuth: false, guestOnly: true }
+    name: 'Register',
+    component: Register
   },
   {
-    path: '/search',
-    name: 'search',
-    component: SearchPage,
-    meta: { requiresAuth: false }
+    path: '/age-verification',
+    name: 'AgeVerification',
+    component: AgeVerification
   },
   {
-    path: '/review/new',
-    name: 'review-new',
-    component: ReviewFormPage,
-    meta: { requiresAuth: true }
+    path: '/submit-review',
+    name: 'SubmitReview',
+    component: SubmitReview,
+    meta: { requiresAuth: true, requiresAge: true, requiresPremium: true }
   },
   {
     path: '/review/:id',
-    name: 'review-detail',
-    component: ReviewDetailPage,
-    meta: { requiresAuth: false }
+    name: 'ReviewDetails',
+    component: ReviewDetails,
+    meta: { requiresAge: true }
   },
   {
-    path: '/account',
-    name: 'account',
-    component: AccountPage,
-    meta: { requiresAuth: true }
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true, requiresAge: true }
   },
   {
     path: '/subscription',
-    name: 'subscription',
-    component: SubscriptionPage,
-    meta: { requiresAuth: true }
+    name: 'Subscription',
+    component: Subscription,
+    meta: { requiresAuth: true, requiresAge: true }
   },
   {
-    path: '/admin',
-    name: 'admin',
-    component: AdminDashboard,
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: '/search',
+    name: 'Search',
+    component: Search,
+    meta: { requiresAuth: true, requiresAge: true, requiresPremium: true }
   },
   {
     path: '/:pathMatch(.*)*',
-    name: 'not-found',
-    component: NotFoundPage
+    name: 'NotFound',
+    component: NotFound
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
+});
 
-// Navigation guard
+// Initialize Firebase
+initializeFirebase();
+
+// Navigation guards
 router.beforeEach((to, from, next) => {
-  const auth = getFirebaseAuth()
-  
-  onAuthStateChanged(auth, (user) => {
-    const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-    const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
-    const guestOnly = to.matched.some(record => record.meta.guestOnly)
-    
-    // Check if route requires authentication and user is not logged in
-    if (requiresAuth && !user) {
-      next({ name: 'login', query: { redirect: to.fullPath } })
-      return
-    }
-    
-    // Check if route requires admin role
-    if (requiresAdmin) {
-      // Here you would check if user has admin role
-      // For simplicity, we're just checking if user exists
-      if (!user) {
-        next({ name: 'home' })
-        return
-      }
-      
-      // In a real app, you would check user's role from Firestore
-      // For example: if (!userIsAdmin) next({ name: 'home' })
-    }
-    
-    // Check if route is for guests only and user is logged in
-    if (guestOnly && user) {
-      next({ name: 'home' })
-      return
-    }
-    
-    next()
-  })
-})
+  // Check if route requires age verification
+  if (to.meta.requiresAge && !localStorage.getItem('ageVerified')) {
+    next({ name: 'AgeVerification', query: { redirect: to.fullPath } });
+    return;
+  }
 
-export default router
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    const auth = getFirebaseAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      next({ name: 'Login', query: { redirect: to.fullPath } });
+      return;
+    }
+  }
+
+  // Check if route requires premium subscription
+  if (to.meta.requiresPremium) {
+    const userStore = useUserStore();
+    // This check assumes user is authenticated and userStore is populated
+    if (userStore.subscriptionStatus !== 'premium' && !userStore.isAdmin) {
+      next({ name: 'Subscription', query: { redirect: to.fullPath, reason: 'premium_required' } });
+      return;
+    }
+  }
+
+  next();
+});
+
+export default router;
