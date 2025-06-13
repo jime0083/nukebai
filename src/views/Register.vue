@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFirebaseAuth, getFirebaseDb } from '../firebase'
+import { auth, db } from '../firebase'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 
@@ -35,8 +35,7 @@ async function handleRegister() {
   error.value = ''
   
   try {
-    const auth = getFirebaseAuth()
-    const db = getFirebaseDb()
+    // auth and db are now directly imported
     
     // Create user
     const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)

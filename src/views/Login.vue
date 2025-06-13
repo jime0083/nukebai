@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getFirebaseAuth } from '../firebase'
+import { auth } from '../firebase'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 
 const router = useRouter()
@@ -23,7 +23,7 @@ async function handleLogin() {
   error.value = ''
   
   try {
-    const auth = getFirebaseAuth()
+    // auth is now directly imported
     await signInWithEmailAndPassword(auth, email.value, password.value)
     router.push(redirect)
   } catch (err) {
@@ -39,7 +39,7 @@ async function handleGoogleLogin() {
   error.value = ''
   
   try {
-    const auth = getFirebaseAuth()
+    // auth is now directly imported
     const provider = new GoogleAuthProvider()
     await signInWithPopup(auth, provider)
     router.push(redirect)

@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getFirebaseDb } from '../firebase'
+import { db } from '../firebase'
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { useUserStore } from './user'
 
 export const useReviewsStore = defineStore('reviews', () => {
-  const db = getFirebaseDb()
+  // db is now directly imported and can be used in this scope
   const userStore = useUserStore()
   
   const reviews = ref([])
@@ -89,17 +89,19 @@ export const useReviewsStore = defineStore('reviews', () => {
       await addDoc(collection(db, 'posts'), newReviewData)
       
       // Add random points (20-30)
-      const pointsEarned = Math.floor(Math.random() * 11) + 20
+      const pointsEarned = Math.floor(Math.random() * 11) + 15
       
       // Update user's points in Firestore
       const userRef = doc(db, 'users', userStore.user.uid)
       await updateDoc(userRef, {
         points: (userStore.points || 0) + pointsEarned,
+        reportCount: (userStore.user.reportCount || 0) + 1,
         totalPosts: (userStore.user.totalPosts || 0) + 1
       })
       
       // Update local state
       userStore.updatePoints((userStore.points || 0) + pointsEarned)
+      userStore.incrementReportCount()
       
       return {
         success: true,

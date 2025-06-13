@@ -1,9 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFirebaseAuth } from './firebase'
+import { auth, db } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { useUserStore } from './stores/user'
 
 import TheHeader from './components/layout/TheHeader.vue'
@@ -14,10 +14,10 @@ const userStore = useUserStore()
 const isLoading = ref(true)
 
 onMounted(async () => { // Make onMounted async if needed for top-level await, though onAuthStateChanged callback handles async internally
-  const auth = getFirebaseAuth()
+  // auth is now directly imported
   onAuthStateChanged(auth, async (user) => { // Make the callback async
     if (user) {
-      const db = getFirestore();
+      // db is now directly imported
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
@@ -32,6 +32,8 @@ onMounted(async () => { // Make onMounted async if needed for top-level await, t
           role: firestoreData.role || 'user', // Default to 'user' if not set
           subscriptionStatus: firestoreData.subscriptionStatus || 'free',
           points: firestoreData.points || 0,
+          reportCount: firestoreData.reportCount || 0,
+          searchCount: firestoreData.searchCount || 0,
           // ... any other fields from Firestore
         });
         // Optionally update last login time
@@ -46,6 +48,8 @@ onMounted(async () => { // Make onMounted async if needed for top-level await, t
           role: 'user', // Default role
           subscriptionStatus: 'free', // Default subscription
           points: 0,
+          reportCount: 0,
+          searchCount: 0,
           createdAt: serverTimestamp(),
           lastLoginAt: serverTimestamp(),
         };
@@ -85,6 +89,9 @@ onMounted(async () => { // Make onMounted async if needed for top-level await, t
 .main-content {
   flex: 1;
   padding: var(--space-md) 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .loading-container {

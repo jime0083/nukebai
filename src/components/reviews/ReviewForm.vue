@@ -7,7 +7,7 @@
     </div>
     
     <form v-else @submit.prevent="submitReview" class="review-form">
-      <h2>ヌけない動画レビュー投稿</h2>
+      <h2>ヌけなかった動画の報告</h2>
       
       <div class="form-group">
         <label for="videoId">動画ID <span class="required">*</span></label>
@@ -55,27 +55,7 @@
         </div>
       </div>
       
-      <div class="form-group">
-        <label for="imageUpload">画像（任意）</label>
-        <div class="file-upload">
-          <input 
-            type="file" 
-            id="imageUpload" 
-            @change="handleImageChange" 
-            accept="image/*"
-            class="file-input"
-          />
-          <label for="imageUpload" class="file-label">
-            <span v-if="!imageFile">画像を選択</span>
-            <span v-else>{{ imageFile.name }}</span>
-          </label>
-        </div>
-        
-        <div v-if="imagePreview" class="image-preview">
-          <img :src="imagePreview" alt="プレビュー" />
-        </div>
-      </div>
-      
+
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -94,8 +74,7 @@
 import { ref, computed } from 'vue'
 import { useReasonsStore } from '../../stores/reasons'
 import { useReviewsStore } from '../../stores/reviews'
-import { getFirebaseStorage } from '../../firebase'
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+
 
 const emit = defineEmits(['submitted'])
 const reasonsStore = useReasonsStore()
@@ -104,8 +83,7 @@ const reviewsStore = useReviewsStore()
 const videoId = ref('')
 const videoTitle = ref('')
 const selectedReasons = ref([])
-const imageFile = ref(null)
-const imagePreview = ref(null)
+
 const submitting = ref(false)
 const error = ref('')
 const success = ref(false)
@@ -115,31 +93,11 @@ const allReasonsByCategory = computed(() => {
   return reasonsStore.reasonCategories
 })
 
-function handleImageChange(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  if (!file.type.match('image.*')) {
-    error.value = '画像ファイルを選択してください。'
-    return
-  }
-  
-  imageFile.value = file
-  
-  // Create preview
-  const reader = new FileReader()
-  reader.onload = e => {
-    imagePreview.value = e.target.result
-  }
-  reader.readAsDataURL(file)
-}
-
 function resetForm() {
   videoId.value = ''
   videoTitle.value = ''
   selectedReasons.value = []
-  imageFile.value = null
-  imagePreview.value = null
+
   error.value = ''
 }
 
@@ -164,22 +122,10 @@ async function submitReview() {
   error.value = ''
   
   try {
-    // Upload image if selected
-    let imageUrl = null
-    if (imageFile.value) {
-      const storage = getFirebaseStorage()
-      const fileRef = storageRef(storage, `review-images/${Date.now()}-${imageFile.value.name}`)
-      
-      await uploadBytes(fileRef, imageFile.value)
-      imageUrl = await getDownloadURL(fileRef)
-    }
-    
-    // Submit review
     const reviewData = {
-      videoId: videoId.value.trim(),
-      videoTitle: videoTitle.value.trim(),
+      videoId: videoId.value,
+      videoTitle: videoTitle.value,
       reasons: selectedReasons.value,
-      imageUrl
     }
     
     const result = await reviewsStore.submitReview(reviewData)

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFirebaseAuth } from '../../firebase'
+import { auth } from '../../firebase'
 import { signOut } from 'firebase/auth'
 import { useUserStore } from '../../stores/user'
 
@@ -13,8 +13,7 @@ const isLoggedIn = computed(() => !!userStore.user)
 
 async function logout() {
   try {
-    const auth = getFirebaseAuth()
-    await signOut(auth)
+    await signOut(auth) // Use the imported auth directly
     router.push('/login')
   } catch (error) {
     console.error('Error signing out:', error)
@@ -35,7 +34,7 @@ function closeMenu() {
     <div class="container header-container">
       <div class="logo-container">
         <router-link to="/" class="logo">
-          ヌけないアダルト動画レビュー
+          <img src="@/assets/images/logo3.png" alt="ヌケバイ ホーム" class="logo-image">
         </router-link>
       </div>
       
@@ -47,7 +46,7 @@ function closeMenu() {
       
       <nav class="main-nav" :class="{ active: showMenu }">
         <ul class="nav-list">
-          <li><router-link to="/submit-review" @click="closeMenu">投稿</router-link></li>
+          <li><router-link to="/submit-review" @click="closeMenu">報告</router-link></li>
           <li><router-link to="/search" @click="closeMenu">検索</router-link></li>
           <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">ログイン</router-link></li>
           <li v-if="isLoggedIn" class="user-menu">
@@ -55,6 +54,7 @@ function closeMenu() {
             <span v-if="userStore.user && userStore.user.displayName" class="user-name" @click="toggleMenu">{{ userStore.user.displayName }}</span>
             <!-- Basic dropdown for logout for now, can be expanded -->
             <div class="dropdown-menu" v-if="showMenu">
+              <router-link :to="{ name: 'UserProfile' }" @click="closeMenu">プロフィール</router-link>
               <a href="#" @click.prevent="logout(); closeMenu();">ログアウト</a>
             </div>
           </li>
@@ -95,6 +95,12 @@ function closeMenu() {
 
 .logo:hover {
   color: var(--color-primary);
+}
+
+.logo-image {
+  height: 60px; /* Adjust as needed */
+  width: auto;
+  display: block;
 }
 
 .menu-toggle {
@@ -196,6 +202,7 @@ function closeMenu() {
   color: var(--color-on-surface);
   text-decoration: none;
   border-radius: var(--border-radius-sm);
+  font-size: 0.9rem; /* Smaller font for dropdown items */
 }
 
 .dropdown-menu a:hover {

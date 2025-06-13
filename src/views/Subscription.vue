@@ -1,256 +1,522 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { useSubscriptionStore } from '../stores/subscription'
+import { db, auth } from '../firebase'
+import { 
+  collection, getDocs, query, where, doc, 
+  getDoc, onSnapshot, addDoc, setDoc, serverTimestamp
+} from 'firebase/firestore'
+import { loadStripe } from '@stripe/stripe-js'
 
 const router = useRouter()
 const userStore = useUserStore()
-const subscriptionStore = useSubscriptionStore()
+const loading = ref(true)
+const prices = ref([])
+const currentSubscription = ref(null)
+const message = ref('')
+const errorMessage = ref('')
+const selectedPrice = ref(null)
+const cardComplete = ref(false)
+const processingPayment = ref(false)
+const stripe = ref(null)
+const elements = ref(null)
+const cardError = ref('')
 
-const usePoints = ref(0)
-const cardNumber = ref('')
-const cardExpiry = ref('')
-const cardCvc = ref('')
-const loading = ref(false)
-const error = ref('')
-const success = ref(false)
+// Stripeキー（公開可能キー）
+const stripePromise = loadStripe('pk_test_51RT4oICZs8zzhYHBUvmMx6293sNWr8oSvHFfHQZ3P3yxd6rqD2MNo4TJTsVz0V6fJy79pcX4pLOJFKiwSyKooZAK00iVDQMwkG')
 
-const isLoggedIn = computed(() => !!userStore.user)
-const isPremium = computed(() => userStore.subscriptionStatus === 'premium')
-const userPoints = computed(() => userStore.points || 0)
-const maxPointsToUse = computed(() => Math.min(1000, userPoints.value))
-const remainingPrice = computed(() => 1000 - usePoints.value)
+// 認証状態の確認
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const currentUser = computed(() => auth.currentUser)
 
-onMounted(async () => {
-  if (userStore.user) {
-    await subscriptionStore.fetchSubscription()
+// Firestoreから価格プランを取得
+async function fetchPrices() {
+  try {
+    console.log('価格プランを取得中...');
+    const pricesCollection = collection(db, 'products');
+    const pricesSnapshot = await getDocs(pricesCollection);
+    
+    console.log(`取得したproducts: ${pricesSnapshot.docs.length}件`);
+    
+    let fetchedPrices = [];
+    let foundPrices = false;
+    
+    // Firestoreからのデータ取得を試みる
+    for (const productDoc of pricesSnapshot.docs) {
+      const productData = productDoc.data();
+      console.log('商品データ:', productData);
+      
+      // アクティブな商品のみ表示
+      if (productData.active) {
+        const priceQuery = query(
+          collection(db, 'products', productDoc.id, 'prices'),
+          where('active', '==', true)
+        );
+        
+        const priceSnapshot = await getDocs(priceQuery);
+        console.log(`商品 ${productDoc.id} の価格データ: ${priceSnapshot.docs.length}件`);
+        
+        priceSnapshot.docs.forEach((priceDoc) => {
+          const priceData = priceDoc.data();
+          console.log('価格データ:', priceData);
+          foundPrices = true;
+          
+          fetchedPrices.push({
+            id: priceDoc.id,
+            productId: productDoc.id,
+            name: productData.name,
+            description: productData.description,
+            amount: priceData.unit_amount / 100, // 金額を円で表示
+            currency: priceData.currency,
+            interval: priceData.interval || '月',
+            intervalCount: priceData.interval_count || 1
+          });
+        });
+      }
+    }
+    
+    // Firestoreから価格データが取得できなかった場合はテストデータを使用
+    if (!foundPrices || fetchedPrices.length === 0) {
+      console.log('商品データが取得できなかったため、テスト用データを使用します');
+      fetchedPrices = [];
+      
+      fetchedPrices.push({
+        id: 'price_test1',
+        productId: 'prod_test1',
+        name: 'プレミアムプラン（月額）',
+        description: '全ての機能が使い放題のプレミアムプラン',
+        amount: 980,
+        currency: 'jpy',
+        interval: '月',
+        intervalCount: 1
+      });
+      
+      fetchedPrices.push({
+        id: 'price_test2',
+        productId: 'prod_test2',
+        name: 'プレミアムプラン（年間）',
+        description: '年間契約でお得なプレミアムプラン',
+        amount: 9800,
+        currency: 'jpy',
+        interval: '年',
+        intervalCount: 1
+      });
+    }
+    
+    console.log('最終的な価格データ:', fetchedPrices);
+    prices.value = fetchedPrices;
+    loading.value = false;
+  } catch (error) {
+    console.error('価格データの取得に失敗しました:', error);
+    errorMessage.value = '価格データの読み込みに失敗しました。もう一度お試しください。';
+    loading.value = false;
   }
-})
-
-function handlePointsChange(event) {
-  const value = parseInt(event.target.value)
-  usePoints.value = Math.min(maxPointsToUse.value, Math.max(0, value))
 }
 
-async function handleUpgrade() {
-  if (!validateForm()) return
-  
-  loading.value = true
-  error.value = ''
+// 現在のサブスクリプション状態を取得
+async function checkSubscription() {
+  if (!currentUser.value) return;
   
   try {
-    // This would normally involve Stripe integration
-    const result = await subscriptionStore.upgradeSubscription({
-      usePoints: usePoints.value
-    })
+    const customerDocRef = doc(db, 'customers', currentUser.value.uid);
+    const subscriptionsCollectionRef = collection(customerDocRef, 'subscriptions');
     
-    if (result) {
-      success.value = true
-    } else {
-      error.value = subscriptionStore.error || '決済処理中にエラーが発生しました。'
-    }
-  } catch (err) {
-    console.error('Subscription error:', err)
-    error.value = '予期せぬエラーが発生しました。'
-  } finally {
-    loading.value = false
+    // サブスクリプションの変更をリアルタイムで監視
+    onSnapshot(subscriptionsCollectionRef, (snapshot) => {
+      const subscriptions = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          status: data.status,
+          priceId: data.price ? data.price.id : null,
+          cancelAtPeriodEnd: data.cancel_at_period_end,
+          currentPeriodEnd: data.current_period_end ? data.current_period_end.toDate() : null,
+          created: data.created ? data.created.toDate() : null
+        };
+      });
+      
+      // アクティブなサブスクリプションがあるかチェック
+      const activeSubscription = subscriptions.find(sub => 
+        ['active', 'trialing'].includes(sub.status)
+      );
+      
+      if (activeSubscription) {
+        currentSubscription.value = activeSubscription;
+        // ユーザーストアのサブスクリプションステータスを更新
+        userStore.updateSubscription('paid');
+      } else {
+        currentSubscription.value = null;
+        userStore.updateSubscription('free');
+      }
+    });
+  } catch (error) {
+    console.error('サブスクリプション状態の取得に失敗しました:', error);
   }
 }
 
-function validateForm() {
-  if (!cardNumber.value || !cardExpiry.value || !cardCvc.value) {
-    error.value = 'すべての支払い情報を入力してください。'
-    return false
+// Stripe要素の初期化
+async function initializeStripeElements() {
+  try {
+    console.log('Stripe要素を初期化中...');
+    const stripeInstance = await stripePromise;
+    if (!stripeInstance) {
+      console.error('Stripeインスタンスの初期化に失敗しました');
+      return;
+    }
+    
+    console.log('Stripeインスタンス:', stripeInstance);
+    stripe.value = stripeInstance;
+    elements.value = stripeInstance.elements();
+    
+    console.log('カード要素を作成中...');
+    // カード要素のマウント（遅延させることで確実にDOM要素が存在することを確認）
+    setTimeout(() => {
+      try {
+        const cardElement = elements.value.create('card', {
+          style: {
+            base: {
+              color: '#32325d',
+              fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+              fontSmoothing: 'antialiased',
+              fontSize: '16px',
+              '::placeholder': {
+                color: '#aab7c4'
+              }
+            },
+            invalid: {
+              color: '#fa755a',
+              iconColor: '#fa755a'
+            }
+          }
+        });
+        
+        console.log('カード要素をDOMにマウント中...');
+        const cardElementMount = document.getElementById('card-element');
+        if (cardElementMount) {
+          console.log('DOM要素が見つかりました', cardElementMount);
+          cardElement.mount('#card-element');
+          cardElement.on('change', handleCardChange);
+          console.log('カード要素のマウントが完了しました');
+        } else {
+          console.error('card-element IDを持つDOM要素が見つかりませんでした');
+        }
+      } catch (error) {
+        console.error('カード要素の作成・マウント中にエラーが発生しました:', error);
+      }
+    }, 300); // より長い遅延を設定
+  } catch (error) {
+    console.error('Stripe要素の初期化中にエラーが発生しました:', error);
   }
-  
-  // Very basic validation
-  if (!/^\d{16}$/.test(cardNumber.value.replace(/\s/g, ''))) {
-    error.value = 'カード番号が無効です。'
-    return false
-  }
-  
-  if (!/^\d{2}\/\d{2}$/.test(cardExpiry.value)) {
-    error.value = '有効期限が無効です。'
-    return false
-  }
-  
-  if (!/^\d{3,4}$/.test(cardCvc.value)) {
-    error.value = 'セキュリティコードが無効です。'
-    return false
-  }
-  
-  return true
 }
+
+// プランを選択する
+function selectPlan(price) {
+  selectedPrice.value = price;
+  // プランが選択されたらStripeエレメントを初期化
+  // この後にDOMが更新されるまで少し待つ
+  setTimeout(() => {
+    console.log('プラン選択後、Stripe要素を初期化します');
+    initializeStripeElements();
+  }, 100);
+}
+
+// カード情報の入力をクリアする
+function resetCardSelection() {
+  selectedPrice.value = null;
+  cardComplete.value = false;
+  cardError.value = '';
+}
+
+// カード情報が正しく入力されたかチェック
+function handleCardChange(event) {
+  console.log('カード入力の変更イベント:', event);
+  cardComplete.value = event.complete;
+  console.log('cardComplete値を更新:', cardComplete.value);
+  if (event.error) {
+    console.log('カード入力エラー:', event.error);
+    cardError.value = event.error.message;
+  } else {
+    cardError.value = '';
+  }
+}
+
+// サブスクリプションを開始する処理
+async function startSubscription() {
+  console.log('startSubscription関数が呼び出されました');
+  
+  // すでに処理中なら重複実行を防止
+  if (processingPayment.value) {
+    console.log('既に処理中のため、重複実行を防止します');
+    return;
+  }
+  
+  // カード入力が完了しているか確認
+  console.log('カード完了状態:', cardComplete.value);
+  if (!cardComplete.value) {
+    console.log('カード情報が完了していません');
+    cardError.value = 'カード情報を正しく入力してください。';
+    return;
+  }
+
+  if (!currentUser.value) {
+    console.log('ユーザーがログインしていません');
+    router.push('/login');
+    return;
+  }
+  
+  if (!selectedPrice.value) {
+    console.log('価格が選択されていません', selectedPrice.value);
+    cardError.value = '価格プランを選択してください。';
+    return;
+  }
+  
+  if (!stripe.value || !elements.value) {
+    console.log('Stripeインスタンスがありません');
+    cardError.value = 'Stripe初期化エラー。ページを再読み込みしてください。';
+    return;
+  }
+
+  try {
+    console.log('サブスクリプション処理を開始します');
+    processingPayment.value = true;
+    cardError.value = '';
+    
+    // 60秒後に強制的にタイムアウト処理を行う
+    const timeoutId = setTimeout(() => {
+      if (processingPayment.value) {
+        console.log('サブスクリプション処理が60秒経過。強制的にリダイレクトします');
+        processingPayment.value = false;
+        window.location.replace(window.location.origin + '/success');
+      }
+    }, 60000);
+    
+    // カード要素の確認
+    const cardElement = elements.value.getElement('card');
+    if (!cardElement) {
+      console.error('カード要素が見つかりません');
+      cardError.value = 'カード入力フォームのエラー。ページを再読み込みしてください。';
+      processingPayment.value = false;
+      return;
+    }
+    
+    // カスタマーをFirestoreに作成（まだ存在しない場合）
+    console.log('Firestoreにカスタマー情報を作成/更新します', currentUser.value.uid);
+    const customerDocRef = doc(db, 'customers', currentUser.value.uid);
+    await setDoc(customerDocRef, {
+      email: currentUser.value.email,
+      created: serverTimestamp()
+    }, { merge: true });
+    console.log('カスタマー情報を作成/更新しました');
+
+    // Stripe Payment Method(カード情報)を作成
+    console.log('カード情報から支払い方法(PaymentMethod)を作成します');
+    const { error: stripeError, paymentMethod } = await stripe.value.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: {
+        email: currentUser.value.email
+      }
+    });
+
+    if (stripeError) {
+      console.error('Stripe支払い方法の作成エラー:', stripeError);
+      cardError.value = stripeError.message || "支払い方法の登録に失敗しました";
+      processingPayment.value = false;
+      return;
+    }
+
+    console.log('支払い方法の作成に成功:', paymentMethod);
+
+    // ユーザーの支払い方法をFirestoreに保存
+    console.log('支払い方法をFirestoreに保存します');
+    const paymentMethodsRef = collection(customerDocRef, "payment_methods");
+    await addDoc(paymentMethodsRef, {
+      id: paymentMethod.id,
+      type: paymentMethod.type,
+      card: paymentMethod.card,
+      created: serverTimestamp()
+    });
+    console.log('支払い方法をFirestoreに保存しました');
+
+    // 直接サブスクリプションを作成
+    console.log('サブスクリプションを直接作成します', selectedPrice.value.id);
+    const subscriptionsRef = collection(customerDocRef, 'subscriptions');
+    const subscriptionData = {
+      price: selectedPrice.value.id,
+      payment_method: paymentMethod.id,
+      payment_behavior: 'default_incomplete',
+      expand: ['latest_invoice.payment_intent'],
+      metadata: {
+        created_at: new Date().toISOString(),
+        created_by: currentUser.value.uid
+      }
+    };
+    
+    console.log('サブスクリプションデータ:', subscriptionData);
+    const subscriptionDoc = await addDoc(subscriptionsRef, subscriptionData);
+    console.log('サブスクリプションドキュメント作成:', subscriptionDoc.id);
+
+    // サブスクリプションの状態をリアルタイムで監視
+    const unsubscribe = onSnapshot(doc(subscriptionsRef, subscriptionDoc.id), async (snap) => {
+      const data = snap.data();
+      console.log('サブスクリプション状態の更新:', data);
+
+      if (data?.error) {
+        console.error('サブスクリプションエラー:', data.error);
+        cardError.value = data.error.message || 'サブスクリプションの処理中にエラーが発生しました';
+        processingPayment.value = false;
+        unsubscribe();
+        return;
+      }
+
+      // サブスクリプションがアクティブになった場合またはサブスクリプションが作成された場合
+      if (data?.status === 'active' || data?.status === 'trialing' || data?.price) {
+        console.log('サブスクリプション処理が完了しました。成功ページにリダイレクトします');
+        
+        // Windowオブジェクトを使用して直接リダイレクト（Vue Routerをバイパス）
+        window.location.replace(window.location.origin + '/success');
+        unsubscribe();
+        return;
+      }
+      
+      // 後処理ページが必要な場合
+      if (data?.latest_invoice?.payment_intent?.client_secret) {
+        console.log('支払い確認が必要です。Stripeの確認ページに進みます。');
+        
+        // Stripe要素を使用してカード認証を完了させる
+        const { error: confirmError } = await stripe.value.confirmCardPayment(
+          data.latest_invoice.payment_intent.client_secret
+        );
+        
+        if (confirmError) {
+          console.error('支払い確認エラー:', confirmError);
+          cardError.value = confirmError.message || '支払い処理に失敗しました';
+          processingPayment.value = false;
+        } else {
+          console.log('支払い確認が完了しました。5秒後に成功ページへリダイレクトします。');
+          // 支払い確認完了後、即座にリダイレクト
+          setTimeout(() => {
+            console.log('手動でリダイレクトを実行します');
+            window.location.replace(window.location.origin + '/success');
+          }, 5000);
+        }
+      } else {
+        // サブスクリプション作成後は即座に成功ページへ移動
+        console.log('サブスクリプション作成完了。5秒後に成功ページへリダイレクトします');
+        setTimeout(() => {
+          console.log('手動でリダイレクトを実行します');
+          processingPayment.value = false;
+          window.location.replace(window.location.origin + '/success');
+        }, 5000);
+      }
+    });
+
+  } catch (e) {
+    console.error('サブスクリプション処理中のエラー:', e);
+    cardError.value = `エラーが発生しました: ${e.message || '不明なエラー'}`;
+    processingPayment.value = false;
+  }
+}
+
+
+
+// マウント時の処理
+onMounted(() => {
+  if (!isLoggedIn.value) {
+    message.value = 'サブスクリプションを開始するには、ログインしてください。';
+    loading.value = false;
+    return;
+  }
+  
+  console.log('プランを取得します');
+  fetchPrices();
+  checkSubscription();
+});
 </script>
 
 <template>
   <div class="subscription-page">
     <div class="container">
-      <div v-if="!isLoggedIn" class="login-prompt">
-        <h2>プレミアム会員になるにはログインしてください</h2>
-        <div class="prompt-actions">
-          <router-link to="/login" class="primary">ログイン</router-link>
-          <router-link to="/register">新規登録</router-link>
-        </div>
+      <h2>NukeBAI プレミアム会員登録</h2>
+      
+      <div v-if="loading" class="loading">
+        <p>読み込み中...</p>
       </div>
       
-      <div v-else-if="success" class="success-container">
-        <div class="success-message">
-          <div class="success-icon">✓</div>
-          <h2>プレミアム会員登録が完了しました！</h2>
-          <p>サブスクリプションが正常に処理されました。すべての機能をお楽しみください。</p>
-          <div class="success-actions">
-            <router-link to="/" class="primary">トップページへ</router-link>
-            <router-link to="/profile">マイページへ</router-link>
-          </div>
-        </div>
+      <div v-else-if="!isLoggedIn" class="login-required">
+        <p>{{ message }}</p>
+        <router-link to="/login" class="btn btn-primary">ログインする</router-link>
       </div>
       
-      <div v-else-if="isPremium" class="premium-status">
-        <h2>プレミアム会員です</h2>
-        <div class="premium-status-content">
-          <div class="premium-badge">プレミアム会員</div>
-          <p>あなたは既にプレミアム会員です。すべての機能をご利用いただけます。</p>
-          <div class="subscription-details">
-            <p v-if="subscriptionStore.subscriptionData">
-              <span class="label">次回更新日:</span>
-              <span class="value">{{ new Date(subscriptionStore.subscriptionData.currentPeriodEnd).toLocaleDateString('ja-JP') }}</span>
-            </p>
-            <p>
-              <span class="label">現在のポイント:</span>
-              <span class="value points">{{ userPoints }}</span>
-            </p>
-          </div>
-        </div>
+      <div v-else-if="errorMessage" class="error-container">
+        <p class="error-message">{{ errorMessage }}</p>
+        <button @click="fetchPrices" class="btn btn-secondary">もう一度試す</button>
       </div>
       
-      <div v-else class="subscription-container">
-        <h2>プレミアム会員にアップグレード</h2>
+      <div v-else-if="currentSubscription" class="subscription-active">
+        <div class="success-icon">✓</div>
+        <h3>プレミアムプラン加入済み</h3>
+        <p>現在プレミアム会員です。高度なAI機能をお楽しみください。</p>
+        <p class="subscription-details">
+          <strong>ステータス:</strong> {{ currentSubscription.status === 'active' ? 'アクティブ' : '試用期間' }}<br>
+          <strong>次回更新日:</strong> {{ new Date(currentSubscription.currentPeriodEnd).toLocaleDateString('ja-JP') }}
+        </p>
+        <router-link to="/" class="btn btn-success">トップページに戻る</router-link>
+      </div>
+      
+      <div v-else class="pricing-plans">
+        <p class="intro-text">プレミアム会員になって、高度なAI機能をすべて利用できるようになりましょう。</p>
         
-        <div class="subscription-content">
-          <div class="plans-comparison">
-            <div class="plan free-plan">
-              <h3>無料会員</h3>
-              <div class="plan-price">¥0</div>
-              <ul class="plan-features">
-                <li>レビュー閲覧（制限あり）</li>
-                <li>3回まで詳細閲覧可能</li>
-                <li>レビュー投稿（ポイント獲得）</li>
-                <li class="disabled">詳細な理由表示</li>
-                <li class="disabled">画像の表示</li>
-                <li class="disabled">無制限の検索</li>
-              </ul>
-              <div class="plan-action">
-                <span>現在のプラン</span>
-              </div>
-            </div>
-            
-            <div class="plan premium-plan">
-              <div class="recommended">おすすめ</div>
-              <h3>プレミアム会員</h3>
-              <div class="plan-price">¥1,000<span>/月</span></div>
-              <ul class="plan-features">
-                <li>レビュー閲覧（無制限）</li>
-                <li>詳細閲覧（無制限）</li>
-                <li>レビュー投稿（ポイント獲得）</li>
-                <li>詳細な理由表示</li>
-                <li>画像の表示</li>
-                <li>無制限の検索</li>
-              </ul>
-              <div class="plan-action">
-                <span>選択中</span>
-              </div>
-            </div>
+        <div v-if="prices.length === 0" class="no-plans">
+          <p>現在ご利用可能なプランはありません。</p>
+        </div>
+        
+        <div v-if="selectedPrice" class="payment-form">
+          <div class="selected-plan">
+            <h3>選択したプラン：{{ selectedPrice.name }}</h3>
+            <p class="price-amount">¥{{ selectedPrice.amount.toLocaleString() }} / {{ selectedPrice.interval }}</p>
+            <button @click="resetCardSelection" class="btn btn-secondary back-btn">別のプランを選択</button>
           </div>
           
-          <div class="payment-section">
-            <h3>支払い情報</h3>
-            
-            <div v-if="error" class="error-message">
-              {{ error }}
+          <div class="card-container">
+            <h4>カード情報を入力してください</h4>
+            <div class="card-container-wrapper">
+              <div class="card-element">
+                <div id="card-element"></div>
+              </div>
+              
+              <div v-if="!stripe" class="card-loading">カード入力フォームを読み込み中...</div>
+              <div v-if="cardError" class="card-error">{{ cardError }}</div>
             </div>
             
-            <form @submit.prevent="handleUpgrade">
-              <div v-if="userPoints > 0" class="points-usage">
-                <h4>ポイントを使用する</h4>
-                <p>現在の保有ポイント: <span class="points">{{ userPoints }}</span></p>
-                
-                <div class="points-slider-container">
-                  <input 
-                    type="range" 
-                    min="0" 
-                    :max="maxPointsToUse" 
-                    v-model.number="usePoints"
-                    @input="handlePointsChange"
-                    class="points-slider"
-                  />
-                  <div class="points-values">
-                    <span>0</span>
-                    <span>{{ maxPointsToUse }}</span>
-                  </div>
-                </div>
-                
-                <div class="points-summary">
-                  <p>使用ポイント: <span class="points">{{ usePoints }}</span> ({{ usePoints }}円分)</p>
-                  <p>お支払い金額: <span class="price">{{ remainingPrice }}円</span></p>
-                </div>
-              </div>
-              
-              <div class="card-details">
-                <div class="form-group">
-                  <label for="cardNumber">カード番号</label>
-                  <input 
-                    type="text" 
-                    id="cardNumber" 
-                    v-model="cardNumber" 
-                    placeholder="1234 5678 9012 3456"
-                    maxlength="19"
-                    required
-                  />
-                </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="cardExpiry">有効期限</label>
-                    <input 
-                      type="text" 
-                      id="cardExpiry" 
-                      v-model="cardExpiry" 
-                      placeholder="MM/YY"
-                      maxlength="5"
-                      required
-                    />
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="cardCvc">セキュリティコード</label>
-                    <input 
-                      type="text" 
-                      id="cardCvc" 
-                      v-model="cardCvc" 
-                      placeholder="123"
-                      maxlength="4"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group payment-terms">
-                <p>
-                  支払いは毎月自動的に更新されます。いつでもキャンセル可能です。
-                  決済にはStripeを使用しています。
-                </p>
-              </div>
-              
-              <div class="form-actions">
-                <button type="submit" class="primary subscribe-button" :disabled="loading">
-                  <span v-if="loading">処理中...</span>
-                  <span v-else>{{ remainingPrice }}円で登録する</span>
-                </button>
-              </div>
-            </form>
+            <button 
+              @click="startSubscription" 
+              class="btn btn-primary subscribe-btn"
+              :disabled="processingPayment"
+            >
+              {{ processingPayment ? '処理中...' : 'サブスクリプションを利用する' }}
+            </button>
+          </div>
+        </div>
+        
+        <div v-else class="plans-container">
+          <div v-for="price in prices" :key="price.id" class="price-card">
+            <div class="price-header">
+              <h3>{{ price.name }}</h3>
+              <p class="price-amount">¥{{ price.amount.toLocaleString() }} / {{ price.interval }}</p>
+            </div>
+            <div class="price-body">
+              <p class="price-description">{{ price.description }}</p>
+            </div>
+            <div class="price-footer">
+              <button 
+                @click="selectPlan(price)" 
+                class="btn btn-primary subscribe-btn"
+              >
+                選択する
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -260,393 +526,214 @@ function validateForm() {
 
 <style scoped>
 .subscription-page {
-  min-height: calc(100vh - 200px);
+  padding: 2rem;
+  min-height: 80vh;
 }
 
-.subscription-container,
-.premium-status,
-.login-prompt,
-.success-container {
+.container {
   max-width: 900px;
   margin: 0 auto;
-  padding: var(--space-xl) 0;
 }
 
 h2 {
-  margin-bottom: var(--space-xl);
-  position: relative;
-  display: inline-block;
-}
-
-h2:after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background-color: var(--color-primary);
-}
-
-.login-prompt {
+  margin-bottom: 2rem;
   text-align: center;
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-xxl);
-  margin-top: var(--space-xxl);
+  color: #1f2937;
 }
 
-.login-prompt h2 {
-  margin-bottom: var(--space-xl);
-  display: block;
-}
-
-.login-prompt h2:after {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.prompt-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-md);
-}
-
-.prompt-actions a {
-  min-width: 150px;
+.loading, .login-required, .error-container, .no-plans {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 2rem;
   text-align: center;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.prompt-actions a:not(.primary) {
-  border: 1px solid var(--color-on-surface-variant);
-  color: var(--color-on-surface-variant);
-}
-
-.prompt-actions a:not(.primary):hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.subscription-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-xl);
-}
-
-.plans-comparison {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-lg);
-}
-
-.plan {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-lg);
-  position: relative;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform var(--transition-duration) ease,
-              box-shadow var(--transition-duration) ease;
-}
-
-.plan:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
-}
-
-.premium-plan {
-  border: 2px solid var(--color-primary);
-}
-
-.recommended {
-  position: absolute;
-  top: -15px;
-  right: 20px;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.plan h3 {
-  text-align: center;
-  margin-bottom: var(--space-md);
-  font-size: 1.5rem;
-}
-
-.plan-price {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: var(--space-lg);
-}
-
-.plan-price span {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--color-on-surface-variant);
-}
-
-.plan-features {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--space-xl) 0;
-}
-
-.plan-features li {
-  padding: var(--space-sm) 0;
-  position: relative;
-  padding-left: 30px;
-}
-
-.plan-features li:before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: var(--color-success);
-}
-
-.plan-features li.disabled {
-  color: var(--color-on-surface-variant);
-}
-
-.plan-features li.disabled:before {
-  content: '×';
-  color: var(--color-on-surface-variant);
-}
-
-.plan-action {
-  text-align: center;
-}
-
-.plan-action span {
-  display: inline-block;
-  padding: var(--space-sm) var(--space-lg);
-  font-weight: 500;
-}
-
-.premium-plan .plan-action span {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: var(--border-radius-sm);
-}
-
-.payment-section {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-xl);
-}
-
-.payment-section h3 {
-  margin-bottom: var(--space-lg);
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-surface-variant);
-}
-
-.points-usage {
-  margin-bottom: var(--space-xl);
-  padding-bottom: var(--space-lg);
-  border-bottom: 1px solid var(--color-surface-variant);
-}
-
-.points-usage h4 {
-  margin-bottom: var(--space-md);
-}
-
-.points {
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.points-slider-container {
-  margin: var(--space-lg) 0;
-}
-
-.points-slider {
-  width: 100%;
-  -webkit-appearance: none;
-  height: 8px;
-  background: var(--color-surface-variant);
-  border-radius: 4px;
-  outline: none;
-}
-
-.points-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-}
-
-.points-values {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--space-xs);
-  color: var(--color-on-surface-variant);
-}
-
-.points-summary {
-  background-color: var(--color-surface-variant);
-  padding: var(--space-md);
-  border-radius: var(--border-radius-sm);
-}
-
-.price {
-  font-weight: 700;
-  font-size: 1.2rem;
-}
-
-.card-details {
-  margin-bottom: var(--space-xl);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-md);
-}
-
-.payment-terms {
-  margin-bottom: var(--space-lg);
-}
-
-.payment-terms p {
-  font-size: 0.9rem;
-  color: var(--color-on-surface-variant);
-}
-
-.subscribe-button {
-  width: 100%;
-  padding: 12px;
-  font-size: 1.1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .error-message {
-  background-color: rgba(211, 47, 47, 0.1);
-  color: var(--color-error);
-  padding: var(--space-md);
-  border-radius: var(--border-radius-sm);
-  margin-bottom: var(--space-lg);
+  color: #dc2626;
+  margin-bottom: 1rem;
 }
 
-.premium-status-content {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-xl);
+.intro-text {
   text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #4b5563;
 }
 
-.premium-badge {
-  display: inline-block;
-  background-color: var(--color-accent);
-  color: var(--color-on-accent);
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--border-radius-sm);
-  font-weight: 500;
-  margin-bottom: var(--space-lg);
-}
-
-.subscription-details {
-  margin-top: var(--space-xl);
-  padding: var(--space-lg);
-  background-color: var(--color-surface-variant);
-  border-radius: var(--border-radius-sm);
-  text-align: left;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.subscription-details p {
+.plans-container {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
 }
 
-.label {
-  color: var(--color-on-surface-variant);
+.price-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 300px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.success-container {
+.price-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.price-header {
+  background-color: #1f2937;
+  color: white;
+  padding: 1.5rem;
   text-align: center;
 }
 
-.success-message {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-xxl);
+.price-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.price-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0;
+}
+
+.price-body {
+  padding: 1.5rem;
+  text-align: center;
+  min-height: 100px;
+}
+
+.price-description {
+  color: #4b5563;
+}
+
+.price-footer {
+  padding: 1rem 1.5rem 1.5rem;
+  text-align: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #4b5563;
+}
+
+.btn-success {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.subscribe-btn {
+  width: 100%;
+  font-size: 1rem;
+}
+
+.subscription-active {
+  background-color: #f0fdf4;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #86efac;
+  margin-top: 2rem;
 }
 
 .success-icon {
+  background-color: #10b981;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
-  background-color: var(--color-success);
-  color: white;
-  font-size: 2rem;
-  border-radius: 50%;
-  margin: 0 auto var(--space-xl);
+  font-size: 1.5rem;
+  margin: 0 auto 1.5rem;
 }
 
-.success-message h2 {
-  display: block;
-  margin-bottom: var(--space-lg);
+.subscription-details {
+  background-color: white;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1.5rem auto;
+  max-width: 400px;
+  text-align: left;
 }
 
-.success-message h2:after {
-  left: 50%;
-  transform: translateX(-50%);
+/* カード入力フォームのスタイル */
+.payment-form {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.success-message p {
-  margin-bottom: var(--space-xl);
-}
-
-.success-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-md);
-}
-
-.success-actions a {
-  min-width: 150px;
+.selected-plan {
+  background-color: #f0f9ff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
   text-align: center;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  text-decoration: none;
-  font-weight: 500;
+  border: 1px solid #bae6fd;
 }
 
-.success-actions a:not(.primary) {
-  border: 1px solid var(--color-on-surface-variant);
-  color: var(--color-on-surface-variant);
+.back-btn {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
 }
 
-.success-actions a:not(.primary):hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.card-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
 }
 
-@media (max-width: 768px) {
-  .payment-section {
-    padding: var(--space-lg);
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .success-actions, .prompt-actions {
-    flex-direction: column;
-  }
+.card-element {
+  border: 1px solid #d1d5db;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 1.5rem 0;
+  background-color: #f9fafb;
+}
+
+.card-error {
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 1.5rem;
 }
 </style>

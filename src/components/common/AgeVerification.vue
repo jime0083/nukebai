@@ -56,13 +56,14 @@ function verifyAge() {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
 }
 
 .age-verification-modal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   background-color: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);

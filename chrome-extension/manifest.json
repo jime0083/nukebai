@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Nukebai Video Reporter",
+  "version": "0.1.0",
+  "description": "Easily report adult videos to Nukebai directly from your browser.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; script-src-elem 'self' https://www.gstatic.com; object-src 'self'; connect-src https://firestore.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://www.googleapis.com"
+  },
+  "host_permissions": [
+    "https://*.firebaseio.com",
+    "https://*.firebaseapp.com",
+    "https://firestore.googleapis.com",
+    "https://identitytoolkit.googleapis.com",
+    "https://www.googleapis.com"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [ "firebase-config.js" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}

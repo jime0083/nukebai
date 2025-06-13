@@ -2,7 +2,7 @@
   <div class="submit-review-page">
     <div class="container">
       <div class="submit-review-container">
-        <h2>レビュー投稿</h2>
+        <h2>ヌけなかったアダルト動画の報告</h2>
         
         <div v-if="userStore.subscriptionStatus === 'premium'" class="premium-badge">
           <span>プレミアム会員</span>
@@ -11,7 +11,7 @@
         <div class="points-info" v-if="userStore.user">
           <p>現在のポイント: <span class="points">{{ userStore.points || 0 }}</span></p>
           <p class="points-explainer">
-            レビューを投稿すると20〜30ポイントが付与されます。
+            レビューを投稿するとポイントが付与されます。
             ポイントはプレミアムサブスクリプションの支払いに利用できます。
           </p>
         </div>
@@ -45,6 +45,8 @@ h2 {
   margin-bottom: var(--space-xl);
   position: relative;
   display: inline-block;
+  font-size: 2rem;
+  color: white;
 }
 
 h2:after {
@@ -96,6 +98,18 @@ h2:after {
     right: auto;
     display: inline-block;
     margin-bottom: var(--space-lg);
+  }
+}
+
+@media (max-width: 1024px) {
+  h2 {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  h2 {
+    font-size: 1.3rem;
   }
 }
 </style>
