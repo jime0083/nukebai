@@ -89,8 +89,34 @@
         </div>
       </section>
     </div>
-    <div class="fixed-bottom-cta-container">
-      <router-link to="/register" class="fixed-bottom-try-free-button">とりあえず無料で使ってみる</router-link>
+    <div class="fixed-bottom-cta-container" v-if="shouldShowBottomCta">
+      <!-- 未ログインで無料枠を使用していない場合 -->
+      <router-link 
+        v-if="!userStore.isLoggedIn && userStore.anonymousSearchCount < 1" 
+        to="/search" 
+        class="fixed-bottom-try-free-button"
+        @click="incrementAnonymousUsage"
+      >
+        とりあえず無料で使ってみる
+      </router-link>
+      
+      <!-- 未ログインで無料枠を既に使用した場合 -->
+      <router-link 
+        v-else-if="!userStore.isLoggedIn && userStore.anonymousSearchCount >= 1" 
+        to="/login" 
+        class="fixed-bottom-try-free-button"
+      >
+        今だけログインすればもう2回無料！
+      </router-link>
+      
+      <!-- ログイン済みで非課金ユーザーの場合 -->
+      <router-link 
+        v-else-if="userStore.isLoggedIn && !userStore.isPaidUser" 
+        to="/subscription" 
+        class="fixed-bottom-try-free-button"
+      >
+        プレミアム会員になる
+      </router-link>
     </div>
   </div>
 </template>
@@ -99,6 +125,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useUserStore } from '../stores/user'
+import { useRouter } from 'vue-router'
 import ReviewCard from '../components/reviews/ReviewCard.vue'
 import negMan4 from '../assets/images/neg-man4.png';
 import howToImage1 from '../assets/images/use1.png';
@@ -133,9 +160,24 @@ const showUpgradePrompt = computed(() => {
   return userStore.user && userStore.subscriptionStatus === 'free' && userStore.freeUsageCount >= 2
 })
 
+// 下部CTAボタンを表示すべきか
+const shouldShowBottomCta = computed(() => {
+  // 課金ユーザーや管理者の場合は表示しない
+  return !userStore.isPaidUser && !userStore.isAdmin
+})
+
 function incrementUsage() {
   if (userStore.user && userStore.subscriptionStatus === 'free') {
     userStore.incrementFreeUsage()
+  }
+}
+
+// 匿名ユーザーの使用回数をインクリメントする関数
+function incrementAnonymousUsage() {
+  // 匿名ユーザーの場合のみ実行
+  if (!userStore.isLoggedIn) {
+    userStore.incrementAnonymousSearchCount()
+    console.log('匿名ユーザーの使用回数をインクリメントしました:', userStore.anonymousSearchCount)
   }
 }
 

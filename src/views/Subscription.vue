@@ -19,9 +19,12 @@ const errorMessage = ref('')
 const selectedPrice = ref(null)
 const cardComplete = ref(false)
 const processingPayment = ref(false)
-const stripe = ref(null)
-const elements = ref(null)
-const cardError = ref('')
+const stripe = ref(null);
+const elements = ref(null);
+const cardNumber = ref(null);
+const cardExpiry = ref(null);
+const cardCvc = ref(null);
+const cardError = ref('');
 
 // Stripeキー（公開可能キー）
 const stripePromise = loadStripe('pk_test_51RT4oICZs8zzhYHBUvmMx6293sNWr8oSvHFfHQZ3P3yxd6rqD2MNo4TJTsVz0V6fJy79pcX4pLOJFKiwSyKooZAK00iVDQMwkG')
@@ -171,42 +174,100 @@ async function initializeStripeElements() {
     
     console.log('カード要素を作成中...');
     // カード要素のマウント（遅延させることで確実にDOM要素が存在することを確認）
+    // より長い遅延を設定
     setTimeout(() => {
       try {
-        const cardElement = elements.value.create('card', {
-          style: {
-            base: {
-              color: '#32325d',
-              fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-              fontSmoothing: 'antialiased',
-              fontSize: '16px',
-              '::placeholder': {
-                color: '#aab7c4'
-              }
+        console.log('カード要素のマウントを試みます...');
+        // 共通のスタイル設定
+        const elementStyle = {
+          base: {
+            color: '#ffffff',
+            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+            fontSmoothing: 'antialiased',
+            fontSize: '16px',
+            '::placeholder': {
+              color: '#cccccc'
             },
-            invalid: {
-              color: '#fa755a',
-              iconColor: '#fa755a'
-            }
+            backgroundColor: 'transparent'
+          },
+          invalid: {
+            color: '#ff5555',
+            iconColor: '#ff5555'
           }
+        };
+        
+        console.log('個別のカード要素を作成中...');
+        
+        // カード番号要素
+        cardNumber.value = elements.value.create('cardNumber', {
+          style: elementStyle
+        });
+        
+        // 有効期限要素
+        cardExpiry.value = elements.value.create('cardExpiry', {
+          style: elementStyle
+        });
+        
+        // CVCコード要素
+        cardCvc.value = elements.value.create('cardCvc', {
+          style: elementStyle
         });
         
         console.log('カード要素をDOMにマウント中...');
-        const cardElementMount = document.getElementById('card-element');
-        if (cardElementMount) {
-          console.log('DOM要素が見つかりました', cardElementMount);
-          cardElement.mount('#card-element');
-          cardElement.on('change', handleCardChange);
-          console.log('カード要素のマウントが完了しました');
+        
+        // 各要素を対応するDOM要素にマウント
+        const cardNumberMount = document.getElementById('card-number-element');
+        const cardExpiryMount = document.getElementById('card-expiry-element');
+        const cardCvcMount = document.getElementById('card-cvc-element');
+        
+        if (cardNumberMount && cardExpiryMount && cardCvcMount) {
+          cardNumber.value.mount('#card-number-element');
+          cardExpiry.value.mount('#card-expiry-element');
+          cardCvc.value.mount('#card-cvc-element');
+          
+          // 各要素にイベントリスナーを追加
+          cardNumber.value.on('change', handleCardChange);
+          cardExpiry.value.on('change', handleCardChange);
+          cardCvc.value.on('change', handleCardChange);
+          
+          console.log('すべてのカード要素のマウントが完了しました');
         } else {
-          console.error('card-element IDを持つDOM要素が見つかりませんでした');
+          console.error('カード要素のマウントに必要なDOM要素が見つかりませんでした');
         }
       } catch (error) {
         console.error('カード要素の作成・マウント中にエラーが発生しました:', error);
       }
-    }, 300); // より長い遅延を設定
+    }, 1000); // より長い遅延を設定
   } catch (error) {
     console.error('Stripe要素の初期化中にエラーが発生しました:', error);
+  }
+}
+
+function handleCardChange(event) {
+  console.log('カード入力の変更イベント:', event);
+  
+  // 各フィールドの完了状態をチェック
+  if (event.elementType === 'cardNumber' && event.complete) {
+    // カード番号が正しい場合、次のフィールドにフォーカスを移動
+    cardExpiry.value.focus();
+  } else if (event.elementType === 'cardExpiry' && event.complete) {
+    // 有効期限が正しい場合、CVCフィールドにフォーカスを移動
+    cardCvc.value.focus();
+  }
+  
+  // すべての入力フィールドが完了しているか確認する機能を将来追加予定
+  
+  if (event.error) {
+    cardError.value = event.error.message;
+  } else {
+    cardError.value = '';
+  }
+  
+  // カード入力の完了状態を更新
+  if (cardNumber.value && cardExpiry.value && cardCvc.value) {
+    // すべての要素が正しく初期化されていれば、完了状態を更新
+    cardComplete.value = event.complete;
+    console.log('cardComplete値を更新:', cardComplete.value);
   }
 }
 
@@ -226,19 +287,6 @@ function resetCardSelection() {
   selectedPrice.value = null;
   cardComplete.value = false;
   cardError.value = '';
-}
-
-// カード情報が正しく入力されたかチェック
-function handleCardChange(event) {
-  console.log('カード入力の変更イベント:', event);
-  cardComplete.value = event.complete;
-  console.log('cardComplete値を更新:', cardComplete.value);
-  if (event.error) {
-    console.log('カード入力エラー:', event.error);
-    cardError.value = event.error.message;
-  } else {
-    cardError.value = '';
-  }
 }
 
 // サブスクリプションを開始する処理
@@ -267,7 +315,7 @@ async function startSubscription() {
   
   if (!selectedPrice.value) {
     console.log('価格が選択されていません', selectedPrice.value);
-    cardError.value = '価格プランを選択してください。';
+    cardError.value = 'プランを選択してください。';
     return;
   }
   
@@ -292,8 +340,7 @@ async function startSubscription() {
     }, 60000);
     
     // カード要素の確認
-    const cardElement = elements.value.getElement('card');
-    if (!cardElement) {
+    if (!cardNumber.value || !cardExpiry.value || !cardCvc.value) {
       console.error('カード要素が見つかりません');
       cardError.value = 'カード入力フォームのエラー。ページを再読み込みしてください。';
       processingPayment.value = false;
@@ -313,7 +360,7 @@ async function startSubscription() {
     console.log('カード情報から支払い方法(PaymentMethod)を作成します');
     const { error: stripeError, paymentMethod } = await stripe.value.createPaymentMethod({
       type: 'card',
-      card: cardElement,
+      card: cardNumber.value,  // カード番号要素を指定すれば、他の要素も同じセッションとして利用される
       billing_details: {
         email: currentUser.value.email
       }
@@ -432,13 +479,22 @@ onMounted(() => {
   console.log('プランを取得します');
   fetchPrices();
   checkSubscription();
+  
+  // ページ読み込み時に自動的にStripe要素を初期化する
+  setTimeout(() => {
+    initializeStripeElements();
+    // 初めてのロード時にplansの最初のアイテムを自動選択
+    if (prices.value.length > 0) {
+      selectedPrice.value = prices.value[0];
+    }
+  }, 1000);
 });
 </script>
 
 <template>
   <div class="subscription-page">
     <div class="container">
-      <h2>NukeBAI プレミアム会員登録</h2>
+      <h2 class="white-text">NukeBye プレミアム会員登録</h2>
       
       <div v-if="loading" class="loading">
         <p>読み込み中...</p>
@@ -457,7 +513,7 @@ onMounted(() => {
       <div v-else-if="currentSubscription" class="subscription-active">
         <div class="success-icon">✓</div>
         <h3>プレミアムプラン加入済み</h3>
-        <p>現在プレミアム会員です。高度なAI機能をお楽しみください。</p>
+        <p>現在プレミアム会員です</p>
         <p class="subscription-details">
           <strong>ステータス:</strong> {{ currentSubscription.status === 'active' ? 'アクティブ' : '試用期間' }}<br>
           <strong>次回更新日:</strong> {{ new Date(currentSubscription.currentPeriodEnd).toLocaleDateString('ja-JP') }}
@@ -466,27 +522,39 @@ onMounted(() => {
       </div>
       
       <div v-else class="pricing-plans">
-        <p class="intro-text">プレミアム会員になって、高度なAI機能をすべて利用できるようになりましょう。</p>
+        <p class="intro-text white-text">プレミアム会員になって、ヌけないアダルト動画で浪費する時間とお金をなくしましょう！</p>
         
         <div v-if="prices.length === 0" class="no-plans">
           <p>現在ご利用可能なプランはありません。</p>
         </div>
-        
+
         <div v-if="selectedPrice" class="payment-form">
           <div class="selected-plan">
-            <h3>選択したプラン：{{ selectedPrice.name }}</h3>
             <p class="price-amount">¥{{ selectedPrice.amount.toLocaleString() }} / {{ selectedPrice.interval }}</p>
-            <button @click="resetCardSelection" class="btn btn-secondary back-btn">別のプランを選択</button>
           </div>
           
           <div class="card-container">
             <h4>カード情報を入力してください</h4>
             <div class="card-container-wrapper">
-              <div class="card-element">
-                <div id="card-element"></div>
+              <div class="card-fields-container">
+                <div class="card-field">
+                  <label for="card-number-element">カード番号</label>
+                  <div id="card-number-element" class="card-field-input"></div>
+                </div>
+                
+                <div class="card-row">
+                  <div class="card-field card-field-half">
+                    <label for="card-expiry-element">有効期限</label>
+                    <div id="card-expiry-element" class="card-field-input"></div>
+                  </div>
+                  
+                  <div class="card-field card-field-half">
+                    <label for="card-cvc-element">CVC</label>
+                    <div id="card-cvc-element" class="card-field-input"></div>
+                  </div>
+                </div>
               </div>
               
-              <div v-if="!stripe" class="card-loading">カード入力フォームを読み込み中...</div>
               <div v-if="cardError" class="card-error">{{ cardError }}</div>
             </div>
             
@@ -499,7 +567,7 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        
+
         <div v-else class="plans-container">
           <div v-for="price in prices" :key="price.id" class="price-card">
             <div class="price-header">
@@ -528,6 +596,7 @@ onMounted(() => {
 .subscription-page {
   padding: 2rem;
   min-height: 80vh;
+  background-color: #111111;
 }
 
 .container {
@@ -538,7 +607,10 @@ onMounted(() => {
 h2 {
   margin-bottom: 2rem;
   text-align: center;
-  color: #1f2937;
+}
+
+.white-text {
+  color: white;
 }
 
 .loading, .login-required, .error-container, .no-plans {
@@ -558,7 +630,7 @@ h2 {
   text-align: center;
   margin-bottom: 2rem;
   font-size: 1.1rem;
-  color: #4b5563;
+  /* color: #4b5563; */
 }
 
 .plans-container {
@@ -569,12 +641,13 @@ h2 {
 }
 
 .price-card {
-  background-color: white;
+  background-color: black;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
   overflow: hidden;
   width: 300px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: white;
 }
 
 .price-card:hover {
@@ -583,7 +656,7 @@ h2 {
 }
 
 .price-header {
-  background-color: #1f2937;
+  background-color: #000000;
   color: white;
   padding: 1.5rem;
   text-align: center;
@@ -603,7 +676,8 @@ h2 {
 .price-body {
   padding: 1.5rem;
   text-align: center;
-  min-height: 100px;
+  min-height: 0;
+  display: none;
 }
 
 .price-description {
@@ -627,12 +701,12 @@ h2 {
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #ff0000;
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: #cc0000;
 }
 
 .btn-primary:disabled {
@@ -702,12 +776,13 @@ h2 {
 }
 
 .selected-plan {
-  background-color: #f0f9ff;
+  background-color: #000000;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
   text-align: center;
-  border: 1px solid #bae6fd;
+  border: 1px solid #333333;
+  color: white;
 }
 
 .back-btn {
@@ -717,18 +792,50 @@ h2 {
 }
 
 .card-container {
-  background-color: white;
+  background-color: #000000;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
   padding: 2rem;
+  color: white;
 }
 
-.card-element {
-  border: 1px solid #d1d5db;
-  padding: 1rem;
-  border-radius: 6px;
+.card-fields-container {
   margin: 1.5rem 0;
-  background-color: #f9fafb;
+}
+
+.card-field {
+  margin-bottom: 1rem;
+}
+
+.card-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.card-field-half {
+  flex: 1;
+}
+
+.card-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #eeeeee;
+}
+
+.card-field-input {
+  border: 1px solid #333333;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background-color: #222222;
+  min-height: 40px;
+}
+
+/* カード要素の子要素にも高さを設定 */
+.card-field-input iframe {
+  height: 24px;
+  min-height: 24px;
+  background-color: transparent !important;
 }
 
 .card-error {
