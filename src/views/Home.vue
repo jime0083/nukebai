@@ -22,11 +22,11 @@
       <section class="about-nukebai-section">
         <div class="about-nukebai-content-wrapper">
           <div class="about-content-left">
-            <h2 class="section-title">ヌキバイってなに？</h2>
+            <h2 class="section-title">ヌケバイってなに？</h2>
             <div class="about-text-column">
               <p>週3回オナニーをする男性が見るアダルト動画の本数は約5.7本といわれています。</p>
               <p>つまり、2.7本ヌけないアダルト動画を見ていて、それが1本1000円だったとすると週に2700円、1本の動画を50分見ているとすると週に2.25時間浪費していることになります。</p>
-              <p>ヌキバイは月アダルト動画1本分(1000円)でヌけないアダルト動画を見て浪費する時間とお金をなくすサービスです。</p>
+              <p>ヌケバイは月アダルト動画1本分(1000円)でヌけないアダルト動画を見て浪費する時間とお金をなくすサービスです。</p>
               <p>アダルト動画を見るのにかける時間やお金のムダを省き人生の幸福度を高めませんか？</p>
             </div>
           </div>
@@ -36,7 +36,31 @@
         </div>
       </section>
 
-      
+      <!-- キャンペーンバナー -->
+      <div class="campaign-banner">
+        <div class="container">
+          <div class="campaign-title-container">
+            <h2 class="title-large">三大特典</h2>
+            <div class="title-right-container">
+              <p class="title-small">ヌケバイリリース記念！</p>
+              <h3 class="title-medium">キャンペーン</h3>
+            </div>
+          </div>
+          <div class="campaign-timer">
+            <div class="campaign-period-box-bordered">
+              <span class="campaign-period-text">キャンペーン期間</span>
+            </div>
+            <div class="campaign-date-row">
+              <p class="campaign-date">
+                <span class="all-white">2025年</span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">15</span><span class="all-white">日 ～ </span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">30</span><span class="all-white">日</span>
+              </p>
+            </div>
+            <router-link :to="{path: '/campaign', hash: '#top'}" class="campaign-detail-button">
+              キャンペーンページ詳細をチェック
+            </router-link>
+          </div>
+        </div>
+      </div>
 
       <section class="how-to-use-section">
         <h2 class="section-title">ヌケバイの使い方</h2>
@@ -44,17 +68,18 @@
           <div class="how-to-use-card">
             <img :src="howToImage1" alt="使い方1：動画を検索">
             <h3>ステップ1：動画を検索</h3>
-            <p>気になるアダルト動画のIDやタイトルで検索し、他のユーザーのレビューを確認して「ヌけない」動画を事前に見分けます。</p>
+            <p>アダルト動画を見る前に気になる動画を検索しましょう<br>今なら最大3回まで無料で使えます！</p>
           </div>
           <div class="how-to-use-card">
             <img :src="howToImage2" alt="使い方2：レビューを投稿">
             <h3>ステップ2：レビューを投稿</h3>
-            <p>視聴した動画の「ヌけた」「ヌけなかった」体験を具体的にレビューとして投稿し、コミュニティに貢献。ポイントも獲得できます。</p>
+            <p>検索ページの検索ボックスに動画IDを入力してください</p>
+            <p class="disclaimer-text text-left">※未ログインの場合は見られる情報に一部制限がかかります</p>
           </div>
           <div class="how-to-use-card">
             <img :src="howToImage3" alt="使い方3：賢く視聴">
             <h3>ステップ3：賢く視聴</h3>
-            <p>集まったレビュー情報を活用し、本当に楽しめる作品だけを選んで視聴。貴重な時間とお金の浪費を防ぎます。</p>
+            <p>これまでその動画で「ヌけなかった」人の情報を基に本当に楽しめる作品だけを選んで視聴。貴重な時間とお金の浪費を防ぎます。</p>
           </div>
         </div>
       </section>
@@ -91,14 +116,16 @@
     </div>
     <div class="fixed-bottom-cta-container" v-if="shouldShowBottomCta">
       <!-- 未ログインで無料枠を使用していない場合 -->
-      <router-link 
-        v-if="!userStore.isLoggedIn && userStore.anonymousSearchCount < 1" 
-        to="/search" 
-        class="fixed-bottom-try-free-button"
-        @click="incrementAnonymousUsage"
-      >
-        とりあえず無料で使ってみる
-      </router-link>
+      <div v-if="!userStore.isLoggedIn && userStore.anonymousSearchCount < 1" class="button-container">
+        <router-link 
+          to="/search" 
+          class="fixed-bottom-try-free-button"
+          @click="incrementAnonymousUsage"
+        >
+          とりあえず無料で使ってみる
+        </router-link>
+        <p class="disclaimer-text">※未ログイン時は見られる情報に制限がかかります</p>
+      </div>
       
       <!-- 未ログインで無料枠を既に使用した場合 -->
       <router-link 
@@ -271,8 +298,12 @@ h1 {
 }
 
 .search-container {
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 0 var(--space-md);
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .search-form {
@@ -624,12 +655,415 @@ h2:after {
   transform: translateY(-2px);
 }
 
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.disclaimer-text {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.55rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+/* Campaign Banner Styles */
+.campaign-banner {
+  width: 100vw;
+  margin-bottom: var(--space-xl);
+  padding: var(--space-xl) 0;
+  padding-top: 50px;
+  margin-top: 0;
+  position: relative;
+  background-color: var(--color-background);
+  background-image: url('../assets/images/pos-man10.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  max-width: 100vw; /* 画面幅を超えないようにする */
+}
+
+.campaign-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.campaign-title-container, .campaign-timer {
+  position: relative;
+  z-index: 2;
+}
+
+.campaign-title-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-start;
+  width: 98%;
+  margin-left: var(--space-sm);
+  margin-right: var(--space-sm);
+  position: relative;
+}
+
+.title-right-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.title-small {
+  font-size: calc(1.5rem + 1vw);
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0;
+  text-align: left;
+  line-height: 1;
+  white-space: nowrap;
+  transform: skewX(-10deg);
+}
+
+.title-large {
+  font-size: calc(7rem + 2vw);
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1;
+  position: relative;
+  transform: skewX(-10deg);
+  border-bottom: 8px solid var(--color-primary);
+  padding-bottom: 5px;
+  display: inline-block;
+}
+
+.title-medium {
+  font-size: calc(3.5rem + 2vw);
+  font-weight: 900;
+  color: var(--color-primary);
+  text-align: left;
+  line-height: 1;
+  margin-top: -5px;
+  transform: skewX(-10deg);
+}
+
+.campaign-timer {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.campaign-period-box-bordered {
+  margin-top: 20px;
+  border: 2px solid var(--color-primary);
+  padding: 5px 20px;
+  border-radius: 0; /* 角を丸くしない */
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.campaign-date-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.campaign-detail-button {
+  background-color: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  margin-top: 20px;
+}
+
+.campaign-detail-button:hover {
+  background-color: #e03131;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.campaign-period-text {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.campaign-date {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+}
+
+.all-white {
+  color: white;
+}
+
+.large-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  margin: 0 2px;
+}
+
+@media (max-width: 1200px) {
+  .title-large {
+    font-size: calc(5rem + 1vw);
+  }
+  
+  .title-medium {
+    font-size: calc(2.8rem + 1vw);
+  }
+  
+  .title-small {
+    font-size: calc(1.3rem + 0.5vw);
+  }
+}
+
+@media (max-width: 992px) {
+  .title-large {
+    font-size: calc(4.5rem + 1vw);
+  }
+  
+  .title-medium {
+    font-size: calc(2.5rem + 1vw);
+  }
+  
+  .title-small {
+    font-size: calc(1.2rem + 0.5vw);
+  }
+}
+
+@media (max-width: 768px) {
+  .campaign-title-container {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .title-right-container {
+    align-items: center;
+  }
+  
+  .title-large {
+    font-size: calc(4.5rem + 1vw);
+    border-bottom: none;
+    padding-bottom: 3px;
+    text-align: center;
+  }
+  
+  .title-small {
+    font-size: calc(1.5rem + 0.5vw);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .title-medium {
+    font-size: calc(3rem + 1vw);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .campaign-timer {
+    align-items: center;
+  }
+  
+  .campaign-period-box-bordered {
+    text-align: center;
+  }
+  
+  .campaign-date-row {
+    justify-content: center;
+  }
+  
+  .campaign-date {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .large-number {
+    font-size: 2rem;
+  }
+  
+  .campaign-detail-button {
+    margin: 20px auto 0;
+    display: block;
+    text-align: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .title-large {
+    font-size: calc(3rem + 1vw);
+    border-bottom: none;
+    text-align: center;
+  }
+  
+  .title-medium {
+    font-size: calc(2.3rem + 0.5vw);
+    text-align: center;
+  }
+  
+  .title-small {
+    font-size: calc(1.2rem + 0.3vw);
+    text-align: center;
+  }
+  
+  .campaign-date {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+  
+  .large-number {
+    font-size: 1.8rem;
+  }
+  
+  .campaign-timer {
+    width: 100%;
+    padding: 0 10px;
+  }
+  
+  .campaign-period-box-bordered {
+    padding: 5px 15px;
+  }
+  
+  .campaign-detail-button {
+    margin: 15px auto 0;
+    padding: 8px 12px;
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .how-to-use-card {
+    margin-bottom: 15px;
+  }
+  
+  .section-title {
+    margin-bottom: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .title-large {
+    font-size: calc(2.2rem + 1vw);
+  }
+  
+  .title-medium {
+    font-size: calc(1.8rem + 0.5vw);
+  }
+  
+  .title-small {
+    font-size: calc(1rem + 0.3vw);
+  }
+  
+  .campaign-date {
+    font-size: 1.1rem;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .large-number {
+    font-size: 1.4rem;
+  }
+  
+  .campaign-detail-button {
+    width: 90%;
+    font-size: 0.85rem;
+  }
+  
+  .campaign-banner {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+  
+  .hero-section.top-page-top .main-catchphrase,
+  .hero-section.top-page-top2 .main-catchphrase {
+    font-size: 1.3rem;
+  }
+  
+  .hero-section.top-page-top .main-catchphrase .highlight-red,
+  .hero-section.top-page-top2 .main-catchphrase .highlight-red {
+    font-size: 1.8rem;
+  }
+  
+  .section-title {
+    font-size: 1.2rem;
+  }
+  
+  .how-to-use-card h3 {
+    font-size: 1rem;
+  }
+  
+  .how-to-use-card p {
+    font-size: 0.8rem;
+  }
+  
+  .about-text-column p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .title-large {
+    font-size: calc(3rem + 1vw);
+    text-align: center;
+  }
+  
+  .title-medium {
+    font-size: calc(2rem + 0.5vw);
+    text-align: center;
+  }
+  
+  .title-small {
+    font-size: calc(1.2rem + 0.3vw);
+    text-align: center;
+  }
+}
+
 /* Responsive Styles */
 @media (max-width: 1024px) {
+  .home-page {
+    overflow-x: hidden;
+  }
+  
   .hero-section.top-page-top .main-catchphrase,
   .hero-section.top-page-top2 .main-catchphrase {
     font-size: 2rem; /* Adjusted for 1024px */
     line-height: 1.4;
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero-section.top-page-top .main-catchphrase .highlight-red,
@@ -645,55 +1079,128 @@ h2:after {
     padding-right: 0;
     flex-basis: 100%;
     display: flex;
+    flex-direction: column;
     justify-content: flex-start; /* 左揃えに変更 */
+    width: 100%;
   }
 
   .about-nukebai-section .about-text-column {
     text-align: left; /* 左揃えに変更 */
     max-width: 100%;
+    width: 100%;
+  }
+  
+  .about-nukebai-content-wrapper {
+    flex-direction: column;
+    width: 100%;
   }
 
   .section-title {
     text-align: left; /* 左揃えを維持 */
     font-size: 1.8rem;
+    width: 100%;
   }
 
   .how-to-use-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjust card layout */
+    width: 100%;
+  }
+  
+  .how-to-use-card {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .how-to-use-card img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .campaign-banner .container {
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
   }
 }
 
 @media (max-width: 640px) {
+  .home-page {
+    overflow-x: hidden;
+  }
+  
+  .hero-section.top-page-top,
+  .hero-section.top-page-top2 {
+    padding: var(--space-lg) 0;
+  }
+  
   .hero-section.top-page-top .main-catchphrase,
   .hero-section.top-page-top2 .main-catchphrase {
-    font-size: 1.5rem; /* Further adjusted for 640px */
+    font-size: 1.5rem;
     line-height: 1.5;
+    padding: 0 10px;
+    margin-bottom: 0;
   }
 
   .hero-section.top-page-top .main-catchphrase .highlight-red,
   .hero-section.top-page-top2 .main-catchphrase .highlight-red {
-    font-size: 2.4rem; /* Further adjusted for 640px */
+    font-size: 2.2rem;
   }
 
   .section-title {
-    font-size: 1.3rem; /* 640px時の文字サイズを1.3remに変更 */
+    font-size: 1.3rem;
+    padding: 0 10px;
+    margin-top: var(--space-md);
+  }
+
+  .how-to-use-section {
+    padding: var(--space-md) 0;
+  }
+  
+  .how-to-use-grid {
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+    padding: 0 10px;
+  }
+  
+  .how-to-use-card {
+    padding: var(--space-sm);
+    margin-bottom: var(--space-md);
   }
 
   .how-to-use-card h3 {
     font-size: 1.1rem;
+    margin-top: 10px;
   }
 
   .how-to-use-card p {
     font-size: 0.85rem;
+    margin-bottom: 5px;
+  }
+  
+  .about-nukebai-section {
+    padding: var(--space-md);
+  }
+  
+  .about-text-column p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
   }
 
   .fixed-bottom-cta-container {
-    padding: 15px;
+    padding: 12px;
   }
 
   .fixed-bottom-try-free-button {
-    padding: 12px 24px;
-    font-size: 1rem;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .campaign-banner {
+    padding: var(--space-md) 0;
+    padding-top: 30px;
   }
 }
 </style>

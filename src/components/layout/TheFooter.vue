@@ -28,6 +28,7 @@ const currentYear = new Date().getFullYear()
           <h4>サービス</h4>
           <ul>
             <li><router-link to="/subscription">プレミアムプラン</router-link></li>
+            <li v-if="userStore.isLoggedIn"><router-link to="/contract-management">契約内容の変更</router-link></li>
             <li><a href="#">ポイントシステム</a></li>
             <li><a href="#">Chrome拡張機能</a></li>
           </ul>

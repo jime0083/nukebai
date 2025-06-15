@@ -9,6 +9,11 @@
           <span>検索</span>
         </button>
       </div>
+      
+      <!-- 未ログインユーザー向けの注釈 -->
+      <div v-if="!userStore.isLoggedIn" class="disclaimer-container">
+        <p class="disclaimer-text">※未ログイン時は見られる情報に制限がかかります</p>
+      </div>
 
       <!-- Prompt for logged-in free user (below search form) -->
       <div v-if="showLoggedInFreeLimitReachedPrompt" class="logged-in-limit-prompt form-adjacent-prompt">
@@ -146,7 +151,7 @@ const goToLogin = () => {
 };
 
 const goToSubscriptionPage = () => {
-  router.push({ name: 'Subscribe' });
+  router.push({ name: 'Subscription' });
 };
 
 const searchReports = async () => {
@@ -491,5 +496,16 @@ const reasonCounts = computed(() => {
 
 .subscribe-button-promo:hover {
   background-color: var(--color-error-dark);
+}
+
+.disclaimer-container {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.disclaimer-text {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.65rem;
+  margin-bottom: 1rem;
 }
 </style>

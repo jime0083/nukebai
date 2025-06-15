@@ -10,8 +10,10 @@ import SubmitReview from '../views/SubmitReview.vue';
 import ReviewDetails from '../views/ReviewDetails.vue';
 import UserProfile from '../views/UserProfile.vue';
 import Subscription from '../views/Subscription.vue';
+import ContractManagement from '../views/ContractManagement.vue';
 import NotFound from '../views/NotFound.vue';
 import Search from '../views/Search.vue';
+import Campaign from '../views/Campaign.vue';
 import { useUserStore } from '../stores/user';
 
 const routes = [
@@ -67,6 +69,12 @@ const routes = [
     meta: { requiresAge: true } // Only age verification is a hard prerequisite for the route itself
   },
   {
+    path: '/contract-management',
+    name: 'ContractManagement',
+    component: ContractManagement,
+    meta: { requiresAuth: true, requiresAge: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound
@@ -75,12 +83,22 @@ const routes = [
     path: '/success',
     name: 'success',
     component: () => import('../views/Success.vue')
+  },
+  {
+    path: '/campaign',
+    name: 'Campaign',
+    component: Campaign,
+    meta: { requiresAge: true }
   }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 常にページの最上部にスクロールする
+    return { top: 0 }
+  }
 });
 
 // auth is now directly imported from '../firebase.js'

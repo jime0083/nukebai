@@ -2,12 +2,13 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { db, auth } from '../firebase'
+import { db, auth, firebaseApp } from '../firebase'
 import { 
   collection, getDocs, query, where, doc, 
   getDoc, onSnapshot, addDoc, setDoc, serverTimestamp
 } from 'firebase/firestore'
 import { loadStripe } from '@stripe/stripe-js'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -26,8 +27,61 @@ const cardExpiry = ref(null);
 const cardCvc = ref(null);
 const cardError = ref('');
 
+// クーポン関連の状態
+const couponCode = ref('');
+const couponMessage = ref('');
+const isCouponValid = ref(false);
+const isCouponLoading = ref(false);
+const appliedCoupon = ref(null);
+
+// クーポン適用後の価格を計算する関数
+function calculateDiscountedPrice() {
+  if (!selectedPrice.value || !appliedCoupon.value) {
+    return 0;
+  }
+
+  const originalPrice = selectedPrice.value.amount;
+  const coupon = appliedCoupon.value;
+  
+  console.log('割引計算中のクーポンデータ:', coupon);
+  
+  // 様々なデータ構造に対応
+  if (coupon.percent_off && typeof coupon.percent_off === 'number') {
+    // 直接のpercent_offプロパティがある場合
+    const discountRate = coupon.percent_off / 100;
+    return Math.round(originalPrice * (1 - discountRate));
+    
+  } else if (coupon.amount_off && typeof coupon.amount_off === 'number') {
+    // 直接のamount_offプロパティがある場合
+    return Math.max(0, originalPrice - coupon.amount_off);
+    
+  } else if (coupon.discount && coupon.discount.percent_off) {
+    // discountオブジェクト内にパーセント割引がある場合
+    const discountRate = coupon.discount.percent_off / 100;
+    return Math.round(originalPrice * (1 - discountRate));
+    
+  } else if (coupon.discount && coupon.discount.amount_off) {
+    // discountオブジェクト内に定額割引がある場合
+    return Math.max(0, originalPrice - coupon.discount.amount_off);
+    
+  } else if (coupon.coupon_data && coupon.coupon_data.percent_off) {
+    // 別のネストされたオブジェクトに割引情報がある場合
+    const discountRate = coupon.coupon_data.percent_off / 100;
+    return Math.round(originalPrice * (1 - discountRate));
+    
+  } else if (coupon.coupon_data && coupon.coupon_data.amount_off) {
+    return Math.max(0, originalPrice - coupon.coupon_data.amount_off);
+    
+  } else {
+    // 割引情報が見つからない場合は元の価格を返す
+    console.log('割引情報が見つかりませんでした。元の価格を返します:', originalPrice);
+    return originalPrice;
+  }
+}
+
 // Stripeキー（公開可能キー）
-const stripePromise = loadStripe('pk_test_51RT4oICZs8zzhYHBUvmMx6293sNWr8oSvHFfHQZ3P3yxd6rqD2MNo4TJTsVz0V6fJy79pcX4pLOJFKiwSyKooZAK00iVDQMwkG')
+// 本番環境用Stripe公開可能キー
+const stripePromise = loadStripe('pk_live_51RT4oBE6MxxtLpP0g0XpFWpddpkKYW5k5jhzAtU1PrmowUSx3gtFnQko4x1GjT6Cd6SReXCx3q8kXf3iUI8ua2ju00DZJuFfwC')
 
 // 認証状態の確認
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -287,6 +341,92 @@ function resetCardSelection() {
   selectedPrice.value = null;
   cardComplete.value = false;
   cardError.value = '';
+  // クーポン関連の状態もリセット
+  couponCode.value = '';
+  couponMessage.value = '';
+  isCouponValid.value = false;
+  appliedCoupon.value = null;
+}
+
+// クーポンコードを検証する
+async function validateCoupon() {
+  if (!couponCode.value || isCouponLoading.value || isCouponValid.value) return;
+  
+  try {
+    isCouponLoading.value = true;
+    couponMessage.value = '';
+    
+    // Firebase Functionsの設定 - 正しいリージョンを指定し、connectTimeoutを設定
+    const functionWithRegion = getFunctions(firebaseApp, 'asia-northeast1');
+    const validateCouponFunction = httpsCallable(functionWithRegion, 'validateCouponV3', {
+      timeout: 60000 // 60秒のタイムアウトを設定
+    });
+    
+    console.log('クーポンコード送信:', couponCode.value);
+    
+    const { data } = await validateCouponFunction({
+      couponCode: couponCode.value,
+      // プラン情報があれば送信
+      priceId: selectedPrice.value ? selectedPrice.value.id : null
+    });
+    
+    // デバッグ用に返ってきたデータを詳細に表示
+    console.log('クーポン検証結果:', data);
+    console.log('クーポンデータ全体:', data);
+    
+    // クーポンデータを適切な形式に整形する
+    let formattedCoupon = {};
+    
+    if (data.valid) {
+      // クーポン情報を取得するための様々なデータ構造に対応
+      if (data.coupon) {
+        formattedCoupon = data.coupon;
+        console.log('クーポン情報を直接使用:', formattedCoupon);
+      } else if (data.promotion_code && data.promotion_code.coupon) {
+        formattedCoupon = data.promotion_code.coupon;
+        console.log('プロモーションコードからクーポン情報を使用:', formattedCoupon);
+      }
+      
+      // 割引情報を抽出
+      if (data.discount) {
+        formattedCoupon.discount = data.discount;
+        console.log('割引情報を追加:', data.discount);
+      }
+      
+      // 割引情報が親つからない場合のログ出力
+      if (!formattedCoupon.amount_off && !formattedCoupon.percent_off && 
+          (!formattedCoupon.discount || 
+           (!formattedCoupon.discount.amount_off && !formattedCoupon.discount.percent_off))) {
+        console.log('割引情報が見つからないため、クーポン情報が正しく連携されていません');
+        console.log('バックエンド関数からの完全なレスポンス:', data);
+      }
+      
+      // クーポン名の取得
+      let couponName = 'クーポン';
+      if (formattedCoupon.name) {
+        couponName = formattedCoupon.name;
+      } else if (data.promotion_code && data.promotion_code.code) {
+        couponName = `プロモーションコード ${data.promotion_code.code}`;
+      }
+      
+      isCouponValid.value = true;
+      appliedCoupon.value = formattedCoupon;
+      couponMessage.value = `${couponName}が適用されました！`;
+      
+      console.log('整形後のクーポンデータ:', formattedCoupon);
+    } else {
+      couponMessage.value = data.message || 'クーポンコードが無効です';
+      isCouponValid.value = false;
+      appliedCoupon.value = null;
+    }
+  } catch (error) {
+    console.error('クーポン検証エラー:', error);
+    couponMessage.value = 'クーポンの検証中にエラーが発生しました';
+    isCouponValid.value = false;
+    appliedCoupon.value = null;
+  } finally {
+    isCouponLoading.value = false;
+  }
 }
 
 // サブスクリプションを開始する処理
@@ -389,7 +529,11 @@ async function startSubscription() {
     // 直接サブスクリプションを作成
     console.log('サブスクリプションを直接作成します', selectedPrice.value.id);
     const subscriptionsRef = collection(customerDocRef, 'subscriptions');
+    
+    // クーポンコードがある場合は追加
     const subscriptionData = {
+      // 既存のデータ
+    
       price: selectedPrice.value.id,
       payment_method: paymentMethod.id,
       payment_behavior: 'default_incomplete',
@@ -531,6 +675,50 @@ onMounted(() => {
         <div v-if="selectedPrice" class="payment-form">
           <div class="selected-plan">
             <p class="price-amount">¥{{ selectedPrice.amount.toLocaleString() }} / {{ selectedPrice.interval }}</p>
+          </div>
+          
+          <!-- クーポンコード入力欄 -->
+          <div class="coupon-container">
+            <h4>クーポンコード</h4>
+            <div class="coupon-input-group">
+              <input 
+                type="text" 
+                v-model="couponCode" 
+                placeholder="お持ちのクーポンコードを入力"
+                :disabled="isCouponLoading || isCouponValid"
+                class="coupon-input narrow-input"
+              />
+              <button 
+                @click="validateCoupon" 
+                class="btn btn-danger coupon-btn" 
+                :disabled="!couponCode || isCouponLoading || isCouponValid"
+              >
+                {{ isCouponValid ? '適用済み' : isCouponLoading ? '検証中...' : '適用する' }}
+              </button>
+            </div>
+            
+            <div v-if="couponMessage" :class="['coupon-message', isCouponValid ? 'coupon-valid' : 'coupon-error']">
+              {{ couponMessage }}
+            </div>
+            
+            <div v-if="appliedCoupon" class="coupon-details">
+              <!-- ここには実際の割引情報のみを表示 -->
+              <p v-if="appliedCoupon.percent_off && selectedPrice && typeof appliedCoupon.percent_off === 'number'">
+                <strong>割引:</strong> ¥{{ selectedPrice.amount.toLocaleString() }} → <span class="discounted-price">¥{{ calculateDiscountedPrice().toLocaleString() }}</span> ({{ appliedCoupon.percent_off }}%割引)
+              </p>
+              <p v-else-if="appliedCoupon.amount_off && selectedPrice && typeof appliedCoupon.amount_off === 'number'">
+                <strong>割引:</strong> ¥{{ selectedPrice.amount.toLocaleString() }} → <span class="discounted-price">¥{{ calculateDiscountedPrice().toLocaleString() }}</span> ({{ appliedCoupon.amount_off }}円割引)
+              </p>
+              <p v-else-if="appliedCoupon.discount && appliedCoupon.discount.amount_off && selectedPrice">
+                <strong>割引:</strong> ¥{{ selectedPrice.amount.toLocaleString() }} → <span class="discounted-price">¥{{ (selectedPrice.amount - appliedCoupon.discount.amount_off).toLocaleString() }}</span> ({{ appliedCoupon.discount.amount_off }}円割引)
+              </p> 
+              <p v-else-if="appliedCoupon.discount && appliedCoupon.discount.percent_off && selectedPrice">
+                <strong>割引:</strong> ¥{{ selectedPrice.amount.toLocaleString() }} → <span class="discounted-price">¥{{ Math.round(selectedPrice.amount * (1 - appliedCoupon.discount.percent_off / 100)).toLocaleString() }}</span> ({{ appliedCoupon.discount.percent_off }}%割引)
+              </p>
+              <p v-else>
+                <strong>割引適用済み</strong>
+              </p>
+            </div>
           </div>
           
           <div class="card-container">
@@ -738,13 +926,86 @@ h2 {
 }
 
 .subscription-active {
-  background-color: #f0fdf4;
+  background-color: #212121;
+  color: #e0e0e0;
   border-radius: 8px;
   padding: 2rem;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border: 1px solid #86efac;
+  border: 1px solid #424242;
   margin-top: 2rem;
+}
+
+.coupon-container {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #212121;
+  border-radius: 8px;
+  border: 1px solid #424242;
+}
+
+.coupon-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-input {
+  flex-grow: 1;
+  padding: 10px 12px;
+  border: 1px solid #424242;
+  border-radius: 4px;
+  background-color: #333;
+  color: #e0e0e0;
+  height: 42px;
+  box-sizing: border-box;
+}
+
+.narrow-input {
+  max-width: 200px;
+  width: 200px;
+  flex-grow: 0;
+}
+
+.coupon-btn {
+  min-width: 100px;
+  background-color: #dc2626;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coupon-message {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.coupon-valid {
+  background-color: #064e3b;
+  color: #d1fae5;
+}
+
+.coupon-error {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.coupon-details {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #374151;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.discounted-price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ff0000;
 }
 
 .success-icon {
