@@ -33,13 +33,13 @@
           <div class="how-to-use-card">
             <img :src="howToImage1" alt="使い方1：動画を検索">
             <h3>ステップ1：動画を検索</h3>
-            <p>アダルト動画を見る前に気になる動画を検索しましょう<br>今なら最大3回まで無料で使えます！</p>
+            <p>アダルト動画を見る前に気になる動画を検索しましょう<br>ログインすれば無料で検索できます！</p>
           </div>
           <div class="how-to-use-card">
             <img :src="howToImage2" alt="使い方2：レビューを投稿">
             <h3>ステップ2：レビューを投稿</h3>
             <p>検索ページの検索ボックスに動画IDを入力してください</p>
-            <p class="disclaimer-text text-left">※未ログインの場合は見られる情報に一部制限がかかります</p>
+            <p class="disclaimer-text text-left">※検索・報告のご利用にはログインが必要です</p>
           </div>
           <div class="how-to-use-card">
             <img :src="howToImage3" alt="使い方3：賢く視聴">

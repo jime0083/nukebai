@@ -235,12 +235,19 @@ Work 5-1: 年齢確認ゲートの復活 (D-3) 【完了 2026-08-14】
   [x] AgeVerification.vue が redirect クエリを処理し localStorage に記録することを確認
       (既存実装で対応済み)
 
-Work 5-2: 文言と実装の整合 (D-2, E-6)
-  [ ] Home.vue の「最大3回まで無料」等を実仕様(未ログイン1回/登録で無制限)に修正
-  [ ] Search.vue の「さらに2回」を「無制限」に修正
-  [ ] サイト名表記を「ヌケバイ」に全ファイルで統一(2026-08-14 決定。
-      NukeBye / NukeBAI / Nukebai 等の英字表記を置換。index.html の
-      title/description も対象)
+Work 5-2: 文言と実装の整合 + 検索ログイン必須化 (D-2, D-6, E-6) 【完了 2026-08-14】
+  [x] 検索をログイン必須化(Q-b): stores/user.js から匿名検索・モザイクの仕組みを
+      撤去(anonymousSearchCount/MAX_ANONYMOUS/incrementAnonymousSearchCount/
+      shouldShowMosaic/incrementReportCount/incrementSearchCount)。
+      canPerformSearch/canSubmitReport は isLoggedIn に一本化
+  [x] Search.vue を刷新: 未ログインは「検索にはログインが必要」+ログイン導線、
+      ログイン時のみ検索フォーム表示。モザイク/匿名カウントUIを全撤去
+  [x] Home.vue の「最大3回まで無料」→「ログインすれば無料で検索できます」、
+      「未ログインは情報制限」→「検索・報告にはログインが必要」に修正
+  [x] サイト名(E-6): 表示テキストは既に「ヌケバイ」に統一済みを確認
+      (Phase 4 で Subscription.vue の NukeBye/NukeBAI を除去済み。残る latin は
+       CSSクラス名・firebase設定・メールアドレスのみで対象外)
+  ※F-1(0件時の報告導線)は本 Work の Search.vue 刷新で併せて実装(videoId 引き継ぎ)
 
 Work 5-3: ポイントUIの整理 (D-5)
   [ ] UserProfile.vue の「ポイントを利用する」ボタンと準備中クーポン欄を非表示化
