@@ -89,6 +89,7 @@ import negMan1Image from '@/assets/images/neg-man1.png';
 import negMan3Image from '@/assets/images/neg-man3.png';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { useUserStore } from '@/stores/user';
+import { useReasonsStore } from '@/stores/reasons';
 import { useRouter } from 'vue-router'; // Import useRouter
 import { normalizeVideoId } from '@/utils/videoId';
 
@@ -106,30 +107,19 @@ const currentNegImage = ref(negImages[0]); // 初期画像としてリストの�
 
 const db = getFirestore();
 const userStore = useUserStore();
+const reasonsStore = useReasonsStore();
 const router = useRouter(); // Initialize router
 
 const showFreeLimitReachedMessage = computed(() => !userStore.isLoggedIn && !userStore.canPerformSearch);
 
-const reasonDisplayMap = {
-  // 外見・身体的特徴
-  'MALE_MASK': '男優マスクor目出し帽',
-  'FAT_MALE': '太っている男優',
-  'FEMALE_MASK': '女優マスク',
-  // 演技・パフォーマンス
-  'VOICE_QUALITY': '男優・女優の声質',
-  'OVER_ACTING': '男優・女優の演技が演技感ありすぎる',
-  'LONG_OPENING': 'OPトークが長い・つまらなさすぎる',
-  'UNNECESSARY_TALK': '挿入中に不必要な話をしてる',
-  'PASSIVE_FEMALE': '女優がマグロ過ぎる',
-  // 技術的問題
-  'FAKE_CUM': '偽汁(疑似精子)',
-  'BAD_QUALITY': '画質・音声が悪い',
-  'STUDIO_LIKE': '撮影場所がスタジオ過ぎる',
-  // コンテンツ構成
-  'SHORT_SEX': '挿入シーン短すぎ(前戯長すぎ)',
-  'WRONG_POSITION_ORDER': 'フィニッシュまでの体位の順番がおかしい',
-  // 今後追加される可能性のあるコードもここに追加
-};
+// 理由コード→表示名のマップは reasons ストア(マスタ)から生成し、二重管理を排除 (C-2)
+const reasonDisplayMap = computed(() => {
+  const map = {};
+  reasonsStore.getAllReasons().forEach((r) => {
+    map[r.code] = r.displayName;
+  });
+  return map;
+});
 
 const goToLoginForPromo = () => {
   router.push({ name: 'Login', query: { redirect: '/search', reason: 'promo_login_limit' } });
@@ -211,7 +201,7 @@ const reasonCounts = computed(() => {
   reports.value.forEach(report => {
     if (report.reasons && Array.isArray(report.reasons) && report.reasons.length > 0) {
       report.reasons.forEach(reasonCode => {
-        const displayName = reasonDisplayMap[reasonCode] || reasonCode; // マッピングにあれば表示名、なければ元のコード
+        const displayName = reasonDisplayMap.value[reasonCode] || reasonCode; // マスタにあれば表示名、なければ元のコード
         counts[displayName] = (counts[displayName] || 0) + 1;
       });
     } else {

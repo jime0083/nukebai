@@ -169,10 +169,11 @@ Work 3-2: 正規化の全経路適用 (C-1) 【完了 2026-08-14】
   ※ReviewForm.vue は videoId を submitReview に渡すだけで、正規化はデータ層で
     一括実施するため個別対応不要(拡張側は Work 2-5 で実装済み)
 
-Work 3-3: 理由マスタの一本化 (C-2)
-  [ ] Search.vue の reasonDisplayMap を削除し、stores/reasons.js の
-      getReasonsByCode / getAllReasons から表示名を引くよう変更
-  [ ] BAD_CAMERA を含む全コードが検索結果内訳に表示されることを確認
+Work 3-3: 理由マスタの一本化 (C-2) 【完了 2026-08-14】
+  [x] Search.vue のハードコード reasonDisplayMap を削除し、reasons ストアの
+      getAllReasons() から生成する computed マップに置換
+  [x] BAD_CAMERA がマスタ(reasons.js)に存在し、検索内訳に表示されることを確認
+      (拡張の理由リストにも Work 2-5 で BAD_CAMERA 追加済み)
 
 Work 3-4: 既存データのマイグレーション (C-3)
   ※2026-08-14 条件付き承認済み: 既存情報(報告データ)に影響がないことが条件
