@@ -229,10 +229,11 @@ Phase 4 完了条件: 決済関連の実行時エラーが0になり、課金ペ
 Phase 5: 仕様乖離の解消とUX改善 (problem: D-2, D-3, D-5, F-1, F-2, E-6)
 =====================================================================
 
-Work 5-1: 年齢確認ゲートの復活 (D-3) ※2026-08-14 承認済み
-  [ ] router.beforeEach に ageVerified チェックを追加(未確認なら
-      /age-verification へリダイレクト、確認後は元のページへ)
-  [ ] AgeVerification.vue の redirect クエリ処理を動作確認・修正
+Work 5-1: 年齢確認ゲートの復活 (D-3) 【完了 2026-08-14】
+  [x] router.beforeEach に ageVerified チェックを追加(未確認なら
+      /age-verification へ redirect クエリ付きで誘導、確認済みなら元ページへ)
+  [x] AgeVerification.vue が redirect クエリを処理し localStorage に記録することを確認
+      (既存実装で対応済み)
 
 Work 5-2: 文言と実装の整合 (D-2, E-6)
   [ ] Home.vue の「最大3回まで無料」等を実仕様(未ログイン1回/登録で無制限)に修正

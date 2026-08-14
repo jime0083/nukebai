@@ -136,7 +136,17 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore(); // ストアインスタンスを取得
   await waitForUserStoreInitialization(userStore); // userStoreの初期化を待つ
 
-  // Age verification removed - users can access all pages directly
+  // 年齢確認ゲート(D-3): 未確認なら年齢確認ページへ誘導する
+  const ageVerified = localStorage.getItem('ageVerified') === 'true';
+  if (!ageVerified && to.name !== 'AgeVerification') {
+    next({ name: 'AgeVerification', query: { redirect: to.fullPath } });
+    return;
+  }
+  // 確認済みユーザーが年齢確認ページへ来た場合はトップ(または元の遷移先)へ
+  if (ageVerified && to.name === 'AgeVerification') {
+    next(typeof to.query.redirect === 'string' ? to.query.redirect : '/');
+    return;
+  }
 
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
