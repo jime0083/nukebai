@@ -14,14 +14,16 @@ Phase 1: 壊れているコードの修正とデッドコード削除 (problem: 
 =====================================================================
 目的: まず動かない箇所と不要物を無くし、以降の作業の土台を作る
 
-Work 1-1: 存在しないストア参照の修正 (A-1)
-  [ ] Home.vue の showUpgradePrompt / incrementUsage から
+Work 1-1: 存在しないストア参照の修正 (A-1) 【完了 2026-08-14】
+  [x] Home.vue の showUpgradePrompt / incrementUsage から
       freeUsageCount / incrementFreeUsage 参照を削除(未使用の検索UIコードごと整理)
-  [ ] ReviewDetails.vue:64 の userStore.incrementFreeUsage() 呼び出しを削除
-  [ ] ReviewCard.vue:43 の freeUsageCount 参照を現行仕様
-      (未ログイン=anonymousSearchCount)に合わせて修正
-  [ ] stores/user.js の未使用定数 MAX_LOGGED_IN_FREE_SEARCHES /
+  [x] ReviewDetails.vue:64 の userStore.incrementFreeUsage() 呼び出しを削除
+  [x] ReviewCard.vue:43 の freeUsageCount 参照を現行仕様
+      (未ログイン時のみ表示制限)に合わせて修正
+  [x] stores/user.js の未使用定数 MAX_LOGGED_IN_FREE_SEARCHES /
       MAX_PRERELEASE_SEARCHES / isPrereleaseCampaignPeriod を削除
+  [x] (追加) Register.vue の初期ユーザードキュメントから未使用の
+      freeUsageCount フィールドを削除
 
 Work 1-2: 不要ファイルの削除 (E-1)
   [ ] src/components/HelloWorld.vue を削除

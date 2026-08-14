@@ -37,10 +37,8 @@ const reasonsList = computed(() => {
 })
 
 const isLimitedView = computed(() => {
-  // Free users can only see limited info
-  return !userStore.user || 
-         (userStore.subscriptionStatus === 'free' && 
-          userStore.freeUsageCount >= 3)
+  // 未ログインユーザーのみ表示制限(ログインユーザーは全情報閲覧可)
+  return !userStore.user
 })
 
 const reasonsToShow = computed(() => {

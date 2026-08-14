@@ -60,8 +60,6 @@ onMounted(async () => {
     
     if (!review.value) {
       error.value = 'レビューが見つかりませんでした。'
-    } else if (userStore.user && userStore.subscriptionStatus === 'free') {
-      userStore.incrementFreeUsage()
     }
   } catch (err) {
     console.error('Error fetching review:', err)

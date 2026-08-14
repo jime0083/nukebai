@@ -56,7 +56,6 @@ async function handleRegister() {
       subscriptionStatus: 'free',
       points: 0,
       totalPosts: 0,
-      freeUsageCount: 0,
       role: 'user',
       isUnlimited: false
     })

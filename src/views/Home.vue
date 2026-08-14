@@ -11,14 +11,6 @@
     </section>
     
     <div class="container">
-      <div v-if="showUpgradePrompt" class="upgrade-prompt">
-        <div class="upgrade-message">
-          <h3>無料枠が残り少なくなっています</h3>
-          <p>プレミアム会員になって全ての機能を利用しましょう。</p>
-          <router-link to="/subscription" class="primary">プレミアムに登録</router-link>
-        </div>
-      </div>
-      
       <section class="about-nukebai-section">
         <div class="about-nukebai-content-wrapper">
           <div class="about-content-left">
@@ -173,11 +165,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, nextTick } from 'vue'
-import { useReviewsStore } from '../stores/reviews'
-import { useUserStore } from '../stores/user'
-import { useRouter } from 'vue-router'
-import ReviewCard from '../components/reviews/ReviewCard.vue'
+import { onMounted, ref, nextTick } from 'vue'
 import negMan4 from '../assets/images/neg-man4.png';
 import howToImage1 from '../assets/images/use1.png';
 import howToImage2 from '../assets/images/use2.png';
@@ -187,21 +175,10 @@ import reportImage2 from '../assets/images/use5.png';
 import reportImage3 from '../assets/images/use6.png';
 
 
-const reviewsStore = useReviewsStore()
-const userStore = useUserStore()
-
-const searchQuery = ref('')
-const searchResults = ref([])
-const isSearching = ref(false)
-const searchError = ref(null)
-
 // References for the animated elements
 const wasteText = ref(null)
-const priceText = ref(null)
 
-onMounted(async () => {
-  await reviewsStore.fetchReviews()
-  
+onMounted(() => {
   // Setup intersection observer after DOM is updated
   nextTick(() => {
     setupAnimationObserver()
@@ -226,63 +203,6 @@ function setupAnimationObserver() {
   
   // Observe the elements with animation
   if (wasteText.value) observer.observe(wasteText.value)
-  if (priceText.value) observer.observe(priceText.value)
-}
-
-const reviews = computed(() => {
-  return reviewsStore.reviews
-})
-
-const loading = computed(() => {
-  return reviewsStore.loading
-})
-
-const showUpgradePrompt = computed(() => {
-  return userStore.user && userStore.subscriptionStatus === 'free' && userStore.freeUsageCount >= 2
-})
-
-// プレリリース期間中は常に表示する
-// const shouldShowBottomCta = computed(() => {
-//   // 課金ユーザーや管理者の場合は表示しない
-//   return !userStore.isPaidUser && !userStore.isAdmin
-// })
-
-function incrementUsage() {
-  if (userStore.user && userStore.subscriptionStatus === 'free') {
-    userStore.incrementFreeUsage()
-  }
-}
-
-// 匿名ユーザーの使用回数をインクリメントする関数
-function incrementAnonymousUsage() {
-  // 匿名ユーザーの場合のみ実行
-  if (!userStore.isLoggedIn) {
-    userStore.incrementAnonymousSearchCount()
-    console.log('匿名ユーザーの使用回数をインクリメントしました:', userStore.anonymousSearchCount)
-  }
-}
-
-async function searchVideo() {
-  if (!searchQuery.value.trim()) return
-  
-  isSearching.value = true
-  searchError.value = null
-  
-  try {
-    // In a real app, this would query the database
-    // For demo purposes, we'll filter the existing reviews
-    searchResults.value = reviews.value.filter(review => 
-      review.videoId.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      review.videoTitle.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-    
-    incrementUsage()
-  } catch (err) {
-    console.error('Search error:', err)
-    searchError.value = '検索中にエラーが発生しました。'
-  } finally {
-    isSearching.value = false
-  }
 }
 </script>
 

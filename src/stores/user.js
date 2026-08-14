@@ -3,8 +3,6 @@ import { ref, computed } from 'vue' // onMounted はストアセットアップ�
 
 // 利用回数の上限定義
 const MAX_ANONYMOUS_SEARCHES = 1;
-const MAX_LOGGED_IN_FREE_SEARCHES = 2;
-const MAX_PRERELEASE_SEARCHES = 5; // プレリリース期間中の制限
 const ANONYMOUS_SEARCH_COUNT_KEY = 'anonymousSearchCountNukebai'; // アプリ固有のキー名に変更
 
 export const useUserStore = defineStore('user', () => {
@@ -86,16 +84,6 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!user.value);
   const isAdmin = computed(() => isLoggedIn.value && role.value === 'admin');
   const isPaidUser = computed(() => isLoggedIn.value && subscriptionStatus.value !== 'free' && subscriptionStatus.value !== null);
-
-  // プレリリースキャンペーン期間かどうかを判定する関数
-  const isPrereleaseCampaignPeriod = () => {
-    const today = new Date();
-    const campaignStartDate = new Date('2025-06-19');
-    const campaignEndDate = new Date('2025-07-31');
-    campaignEndDate.setHours(23, 59, 59, 999); // 終了日の終わりまで
-    
-    return today >= campaignStartDate && today <= campaignEndDate;
-  };
 
   const canPerformSearch = computed(() => {
     if (!isLoggedIn.value) {
