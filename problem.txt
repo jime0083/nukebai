@@ -32,7 +32,7 @@
     STRIPE_KEY がどこにも定義されていない。呼び出すと必ず ReferenceError
   - 影響: クーポン検証機能(Subscription.vue から呼ばれる)が全く動かない
   - 決定(2026-08-14): 課金凍結・Stripe利用不可のため validateCouponV3 ごと削除する
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Work2-4。validateCouponV3とstripe依存を削除)
 
 [A-3] ContractManagement.vue が存在しない Cloud Functions を呼んでいる
   - 内容: getSubscriptionDetails / cancelSubscription / reactivateSubscription /
@@ -53,7 +53,8 @@
     (3) Webhook が onCall で実装されている(PayPalからのHTTP POSTを受けられない、
         署名検証もない)
   - 影響: PayPal決済は一切機能しない
-  - ステータス: 未着手
+  - ステータス: functions側は解決済み(2026-08-14 Work2-4 で functions/paypal.js と
+    PayPal export を削除)。フロントの src/services/paypal.js 削除は Phase 4 Work 4-3 で実施
 
 =====================================================================
 セクションB: セキュリティ

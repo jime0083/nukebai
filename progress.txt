@@ -103,9 +103,17 @@ Work 2-3: ポイント付与のサーバー移行 (B-2) 【実装完了 2026-08-
       userStore.points もローカル反映
   ※本番反映は一括デプロイ時(Work 2-5 完了後)。トリガーは Cloud Functions デプロイが必要
 
-Work 2-4: functions の秘密情報整理 (B-5, A-2)
-  [ ] functions/index.js の validateCouponV3 を削除(課金凍結決定・Stripe利用
-      不可のため。STRIPE_KEY 未定義問題もこれで解消)
+Work 2-4: functions の秘密情報整理 (B-5, A-2, A-5一部) 【実装完了 2026-08-14】
+  [x] functions/index.js の validateCouponV3 を削除(STRIPE_KEY 未定義問題も解消。A-2)
+  [x] functions/package.json から stripe 依存を削除し package-lock を更新(B-5)
+  [x] (前倒し) functions/paypal.js を削除し index.js の PayPal export も削除。
+      理由: paypal.js が未導入の node-fetch を require しており、放置すると
+      awardPointsOnPost を含む全 functions がデプロイ時に壊れるため(A-5のfunctions側)。
+      フロントの src/services/paypal.js 削除は Phase 4 Work 4-3 のまま
+  [x] 削除した PayPal/クーポン関数を参照する実使用フロントは無いことを確認
+      (src/services/paypal.js は死にコード、ContractManagement の呼ぶ関数は元々未実装)
+  ※本番反映は一括デプロイ時。デプロイ時に旧関数(validateCouponV3等)が本番から
+    削除されるため確認プロンプトに注意
 
 Work 2-5: Chrome拡張の認証実装 (B-4) ※2026-08-14 継続方針決定
   ※重要: Work 2-2 のルールをデプロイすると未認証投稿が塞がれ現行拡張が
