@@ -12,7 +12,7 @@
         <p><strong>メールアドレス:</strong> {{ user.email }}</p>
         <div class="points-section">
           <p><strong>現在の獲得ポイント:</strong> <span class="highlight-stat">{{ user.points !== undefined ? user.points : 'N/A' }}</span></p>
-          <button @click="handleUsePoints" class="use-points-button">ポイントを利用する</button>
+          <p class="points-note">※ポイントの利用機能は近日実装予定です。</p>
         </div>
         <p><strong>現在の報告回数:</strong> <span class="highlight-stat">{{ user.reportCount !== undefined ? user.reportCount : 'N/A' }}</span></p>
         <p><strong>現在の検索回数:</strong> <span class="highlight-stat">{{ user.searchCount !== undefined ? user.searchCount : 'N/A' }}</span></p>
@@ -24,13 +24,6 @@
           <button @click="handleSurvey" class="survey-button">アンケートに答える</button>
         </div>
 
-        <div class="coupon-section">
-          <h3>クーポンコードを利用</h3>
-          <div class="coupon-input-group">
-            <input type="text" v-model="couponCode" placeholder="クーポンコードを入力" class="coupon-input">
-            <button @click="handleRedeemCoupon" class="redeem-coupon-button">利用</button>
-          </div>
-        </div>
       </div>
     </div>
     <div v-else class="loading-message">
@@ -40,33 +33,17 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'; // ref をインポート
+import { computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
-const couponCode = ref(''); // クーポンコード入力用の ref
 
 // 3回以上検索とレポートを使用したユーザーにのみアンケートボタンを表示
 const showSurveyButton = computed(() => {
   if (!user.value) return false;
   return (user.value.searchCount >= 3 && user.value.reportCount >= 3);
 });
-
-const handleUsePoints = () => {
-  // TODO: Implement point usage logic (e.g., show popup)
-  alert('ポイント利用機能は現在準備中です。');
-};
-
-const handleRedeemCoupon = () => {
-  if (!couponCode.value.trim()) {
-    alert('クーポンコードを入力してください。');
-    return;
-  }
-  // TODO: Implement coupon redemption logic
-  alert(`クーポンコード「${couponCode.value}」の利用機能は現在準備中です。`);
-  couponCode.value = ''; // 入力フィールドをクリア
-};
 
 // アンケートボタンがクリックされた時の処理
 const handleSurvey = () => {
@@ -132,24 +109,12 @@ const handleSurvey = () => {
 }
 
 .points-section p {
-  margin-bottom: 8px; /* Space between points display and button */
+  margin-bottom: 8px;
 }
 
-.use-points-button {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  border: 1px solid var(--color-primary); /* Added border for consistency */
-  padding: 8px 15px;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.3s ease;
-}
-
-.use-points-button:hover {
-  background-color: white; /* Assuming a white background is desired */
-  color: black; /* Assuming black text is desired */
-  border: 1px solid var(--color-primary);
+.points-note {
+  color: var(--color-on-surface-variant, #888);
+  font-size: 0.85em;
 }
 
 .profile-details strong {
@@ -160,51 +125,6 @@ const handleSurvey = () => {
   color: red;
   font-size: 1.3em; /* Relative to parent p's font-size */
   font-weight: bold;
-}
-
-.coupon-section {
-  margin-top: 20px; /* Space above the coupon section */
-  padding-top: 15px;
-  /* border-top: 1px solid #eee; */ /* Separator line removed */
-}
-
-.coupon-section h3 {
-  margin-bottom: 10px;
-  font-size: 1.2em;
-}
-
-.coupon-input-group {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Space between input and button */
-}
-
-.coupon-input {
-  width: 200px;
-  height: 38px;
-  padding: 0 10px; /* Vertical padding 0, horizontal 10px */
-  line-height: 36px; /* height (38px) - 1px top border - 1px bottom border */
-  border: 1px solid #ccc;
-  border-radius: var(--border-radius-md);
-  font-size: 16px; /* Explicit font size */
-  box-sizing: border-box;
-  margin-bottom: 0 !important;
-}
-
-.redeem-coupon-button {
-  height: 38px;
-  padding: 0 15px; /* Vertical padding 0, horizontal 15px */
-  background-color: var(--color-secondary, #4CAF50);
-  color: var(--color-on-secondary, white);
-  border: 1px solid var(--color-secondary, #4CAF50);
-  border-radius: var(--border-radius-md);
-  font-size: 16px; /* Explicit font size */
-  cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .redeem-coupon-button:hover {
