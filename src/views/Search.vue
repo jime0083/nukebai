@@ -56,12 +56,18 @@
                   「{{ videoIdSearched }}」は<span class="highlight">{{ totalNeg }}</span>人のユーザーによって報告されています。
                 </p>
               </div>
-              <!-- Reason summary -->
+              <!-- Reason summary(件数降順 + 割合バー) -->
               <div class="reason-summary">
                 <h3>報告理由の内訳:</h3>
-                <ul>
-                  <li v-for="(count, reason) in reasonCounts" :key="reason">
-                    {{ reason }}: {{ count }} 人
+                <ul class="reason-bars">
+                  <li v-for="item in sortedReasonCounts" :key="item.reason" class="reason-bar-item">
+                    <div class="reason-bar-label">
+                      <span>{{ item.reason }}</span>
+                      <span class="reason-bar-count">{{ item.count }}人（{{ item.percent }}%）</span>
+                    </div>
+                    <div class="reason-bar-track">
+                      <div class="reason-bar-fill" :style="{ width: item.barWidth + '%' }"></div>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -174,6 +180,19 @@ const reasonCounts = computed(() => {
     }
   });
   return counts;
+});
+
+// 件数降順にソートし、割合バー(最大件数比)と報告数に対する割合(%)を付与
+const sortedReasonCounts = computed(() => {
+  const entries = Object.entries(reasonCounts.value).map(([reason, count]) => ({ reason, count }));
+  entries.sort((a, b) => b.count - a.count);
+  const max = entries.length ? entries[0].count : 0;
+  const total = totalNeg.value || 1;
+  return entries.map((e) => ({
+    ...e,
+    barWidth: max ? Math.round((e.count / max) * 100) : 0,
+    percent: Math.round((e.count / total) * 100),
+  }));
 });
 </script>
 
@@ -322,10 +341,42 @@ const reasonCounts = computed(() => {
 .reason-summary ul {
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
-.reason-summary li {
-  margin-bottom: var(--space-sm);
+.reason-bars {
+  min-width: 260px;
+}
+
+.reason-bar-item {
+  margin-bottom: var(--space-md);
+}
+
+.reason-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.reason-bar-count {
+  color: var(--color-on-surface-variant);
+  white-space: nowrap;
+}
+
+.reason-bar-track {
+  background-color: var(--color-surface-variant);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.reason-bar-fill {
+  background-color: var(--color-primary);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
 }
 
 .error-message {

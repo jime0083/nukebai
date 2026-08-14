@@ -171,4 +171,32 @@ router.beforeEach(async (to, from, next) => {
   next();
 });
 
+// ページごとの document.title を設定(SEO / F-3)
+const BASE_TITLE = 'ヌケバイ';
+const TITLE_MAP = {
+  Home: 'ヌケバイ | ヌけないアダルト動画の情報共有',
+  Login: 'ログイン',
+  Register: '新規登録',
+  Search: '動画を検索',
+  SubmitReview: 'ヌけない動画を報告',
+  ReviewDetails: 'レビュー詳細',
+  UserProfile: 'プロフィール',
+  Subscription: 'プレミアムプラン',
+  ContractManagement: '契約管理',
+  AgeVerification: '年齢確認',
+  TermsOfService: '利用規約',
+  PrivacyPolicy: 'プライバシーポリシー',
+  NotFound: 'ページが見つかりません',
+};
+router.afterEach((to) => {
+  const mapped = TITLE_MAP[to.name];
+  if (!mapped) {
+    document.title = BASE_TITLE;
+  } else if (to.name === 'Home') {
+    document.title = mapped;
+  } else {
+    document.title = `${mapped} | ${BASE_TITLE}`;
+  }
+});
+
 export default router;

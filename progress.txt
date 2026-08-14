@@ -295,9 +295,11 @@ Work 6-4: Chrome拡張の機能改善 (C-1 関連) 【完了 2026-08-15】
   [x] 拡張の報告理由14件が stores/reasons.js のマスタと完全一致することを確認
       (Work 2-5 で BAD_CAMERA 追加済み。照合スクリプトで一致を検証)
 
-Work 6-5: SEO・表示改善 (F-3, F-4)
-  [ ] @vueuse/head 導入でページ別 title/description を設定、OGP タグ追加
-  [ ] Search.vue の理由内訳を件数降順ソート + 割合バー表示に変更
+Work 6-5: SEO・表示改善 (F-3, F-4) 【完了 2026-08-15】
+  [x] Search.vue の理由内訳を件数降順ソート + 割合バー表示に変更(F-4)
+  [x] SEO(F-3): router.afterEach でページ別 document.title を設定。index.html に
+      OGP/Twitter Card タグを追加。※依存追加(@vueuse/head)は不要と判断し
+      ルーターベースの軽量実装にした(SPAのため動的OGPは効果薄)
 
 Phase 6 完了条件: lint / test / build が全て通り、全ファイルが800行以下になること
 → 完了したら停止してユーザーの指示を待つ
