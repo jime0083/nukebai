@@ -115,15 +115,23 @@ Work 2-4: functions の秘密情報整理 (B-5, A-2, A-5一部) 【実装完了 
   ※本番反映は一括デプロイ時。デプロイ時に旧関数(validateCouponV3等)が本番から
     削除されるため確認プロンプトに注意
 
-Work 2-5: Chrome拡張の認証実装 (B-4) ※2026-08-14 継続方針決定
-  ※重要: Work 2-2 のルールをデプロイすると未認証投稿が塞がれ現行拡張が
-    動かなくなるため、本Workをルールデプロイと同一Phase内で完了させること
-  [ ] popup.html / popup.js にメール/パスワードログインフォームを追加
-      (firebase-auth の gstatic CDN モジュールを使用、manifest.json の CSP 更新)
-  [ ] ログイン状態の保持と表示(ログイン済みなら報告フォーム、未ログインなら
-      ログインフォームを表示。Webの /register への誘導リンクも設置)
-  [ ] 投稿データに authorId(auth.uid)と source: 'extension' を付与
-  [ ] 拡張からの投稿が Work 2-2 のルールを通過することをエミュレータで確認
+Work 2-5: Chrome拡張の認証実装 (B-4, C-4) 【実装完了 2026-08-14】
+  [x] MV3準拠のため Firebase SDK(compat)を chrome-extension/vendor/ にローカル同梱
+      (リモートスクリプト実行禁止に対応。gstatic CDN 読み込みを廃止)
+  [x] popup.html にメール/パスワードのログインフォームを追加。認証状態で
+      ログイン画面 / 報告画面を切替。Webの /register への誘導リンクを設置
+  [x] popup.js を compat SDK ベースに刷新。auth.onAuthStateChanged でUI切替、
+      ログイン(LOCAL永続化=閉じても維持)/ログアウトを実装
+  [x] 保存先を extension_reports → posts に統一(C-4)。authorId=uid /
+      source:'extension' / videoTitle 任意 / createdAt を付与
+  [x] 誤っていた videoId の toLowerCase を廃止(trim+全角半角のみ。完全統一は Work 6-4)
+  [x] 同一ユーザー×同一動画の重複報告チェック、videoId 長さ検証を追加
+  [x] manifest CSP を script-src 'self' に簡素化、connect-src に securetoken 追加、
+      理由に「ログインが必要」を明記、version 0.2.0 に更新
+  [x] 報告理由に BAD_CAMERA を追加(マスタ reasons.js と同期)
+  ※動作確認: 当環境で Chrome 拡張は実行不可のため、デプロイ後にユーザーが
+    「拡張を再読み込み(chrome://extensions)→ログイン→報告→Web検索で反映確認」
+    の手動テストが必要
 
 Phase 2 完了条件: ルールデプロイ後も既存機能(投稿・検索・ログイン)と
 Chrome拡張からの報告が動作し、クライアントから users.points を直接

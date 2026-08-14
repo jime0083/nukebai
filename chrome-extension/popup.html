@@ -2,18 +2,18 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Nukebai Reporter</title>
-  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-  <!-- Add SDKs for Firebase products that you want to use, e.g., Firestore -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+  <title>ヌケバイ Reporter</title>
+  <!-- Firebase SDK は MV3 準拠のためローカル同梱(vendor/)を使用 -->
+  <script src="vendor/firebase-app-compat.js"></script>
+  <script src="vendor/firebase-auth-compat.js"></script>
+  <script src="vendor/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <style>
     body { font-family: sans-serif; width: 350px; padding: 15px; font-size: 14px; }
     h3 { margin-top: 0; color: #333; }
     .field-group { margin-bottom: 12px; }
     label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; }
-    input[type='text'], textarea {
+    input[type='text'], input[type='email'], input[type='password'], textarea {
       width: 95%;
       padding: 8px;
       border: 1px solid #ccc;
@@ -21,16 +21,14 @@
       font-size: 14px;
     }
     textarea { min-height: 60px; }
-    #videoInfo div { margin-bottom: 8px; word-wrap: break-word; font-size: 0.9em; }
-    #videoInfo span { font-weight: normal; color: #333; }
     .checkbox-group label { font-weight: normal; margin-bottom: 2px; display: flex; align-items: center; }
     .checkbox-group input[type='checkbox'] { margin-right: 8px; }
     .checkbox-group {
-      max-height: 150px; /* Adjust as needed */
+      max-height: 150px;
       overflow-y: auto;
-      border: 1px solid #eee; /* Optional: to make the scroll area clearer */
-      padding: 5px; /* Optional: for some spacing */
-      margin-top: 4px; /* Add some space below the label */
+      border: 1px solid #eee;
+      padding: 5px;
+      margin-top: 4px;
     }
     button {
       width: 100%;
@@ -44,50 +42,110 @@
     }
     button:hover { background-color: #0056b3; }
     #reportButton {
-      background-color: #dc3545; /* Red color */
+      background-color: #dc3545;
       border-color: #dc3545;
     }
     #reportButton:hover {
-      background-color: #c82333; /* Darker red on hover */
+      background-color: #c82333;
       border-color: #bd2130;
     }
+    #authBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.85em;
+      color: #555;
+    }
+    #logoutButton {
+      width: auto;
+      padding: 4px 10px;
+      font-size: 12px;
+      background-color: #6c757d;
+    }
+    #logoutButton:hover { background-color: #545b62; }
+    .error-text { color: #dc3545; font-size: 0.85em; margin-top: 6px; }
+    .muted { color: #888; font-size: 0.85em; }
+    a { color: #007bff; }
   </style>
 </head>
 <body>
-  <div id="reportForm">
-  <div class="field-group">
-    <label for="videoId">動画のID</label>
-    <input type="text" id="videoId" placeholder="例: abc123xyz">
+  <!-- 読み込み中 -->
+  <div id="loadingView" style="text-align: center; padding: 20px;">
+    <p class="muted">読み込み中...</p>
   </div>
 
-  <div class="field-group">
-    <label>抜けない理由</label>
-    <div class="checkbox-group">
-      <label><input type="checkbox" name="reason" value="MALE_MASK"> 男優マスクor目出し帽</label>
-      <label><input type="checkbox" name="reason" value="FAT_MALE"> 太っている男優</label>
-      <label><input type="checkbox" name="reason" value="FEMALE_MASK"> 女優マスク</label>
-      <label><input type="checkbox" name="reason" value="VOICE_QUALITY"> 男優・女優の声質</label>
-      <label><input type="checkbox" name="reason" value="OVER_ACTING"> 男優・女優の演技が演技感ありすぎる</label>
-      <label><input type="checkbox" name="reason" value="LONG_OPENING"> OPトークが長い・つまらなさすぎる</label>
-      <label><input type="checkbox" name="reason" value="UNNECESSARY_TALK"> 挿入中に不必要な話をしてる</label>
-      <label><input type="checkbox" name="reason" value="PASSIVE_FEMALE"> 女優がマグロ過ぎる</label>
-      <label><input type="checkbox" name="reason" value="FAKE_CUM"> 偽汁(疑似精子)</label>
-      <label><input type="checkbox" name="reason" value="BAD_QUALITY"> 画質・音声が悪い</label>
-      <label><input type="checkbox" name="reason" value="STUDIO_LIKE"> 撮影場所がスタジオ過ぎる</label>
-      <label><input type="checkbox" name="reason" value="SHORT_SEX"> 挿入シーン短すぎ(前戯長すぎ)</label>
-      <label><input type="checkbox" name="reason" value="WRONG_POSITION_ORDER"> フィニッシュまでの体位の順番がおかしい</label>
+  <!-- 未ログイン: ログインフォーム -->
+  <div id="loginView" style="display: none;">
+    <h3>ヌケバイにログイン</h3>
+    <div class="field-group">
+      <label for="email">メールアドレス</label>
+      <input type="email" id="email" placeholder="メールアドレス">
+    </div>
+    <div class="field-group">
+      <label for="password">パスワード</label>
+      <input type="password" id="password" placeholder="パスワード">
+    </div>
+    <button id="loginButton">ログイン</button>
+    <div id="loginError" class="error-text" style="display: none;"></div>
+    <p class="muted" style="margin-top: 12px;">
+      アカウントをお持ちでない場合は
+      <a href="https://nukebuy.web.app/register" target="_blank" rel="noopener">こちら</a>
+      から登録してください。
+    </p>
+  </div>
+
+  <!-- ログイン済み: 報告フォーム -->
+  <div id="appView" style="display: none;">
+    <div id="authBar">
+      <span id="currentUserEmail"></span>
+      <button id="logoutButton">ログアウト</button>
+    </div>
+
+    <div id="reportForm">
+      <div class="field-group">
+        <label for="videoId">動画のID</label>
+        <input type="text" id="videoId" placeholder="例: ABCD-123">
+      </div>
+
+      <div class="field-group">
+        <label for="videoTitle">動画タイトル(任意)</label>
+        <input type="text" id="videoTitle" placeholder="分かれば入力(任意)">
+      </div>
+
+      <div class="field-group">
+        <label>抜けない理由</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="reason" value="MALE_MASK"> 男優マスクor目出し帽</label>
+          <label><input type="checkbox" name="reason" value="FAT_MALE"> 太っている男優</label>
+          <label><input type="checkbox" name="reason" value="FEMALE_MASK"> 女優マスク</label>
+          <label><input type="checkbox" name="reason" value="VOICE_QUALITY"> 男優・女優の声質</label>
+          <label><input type="checkbox" name="reason" value="OVER_ACTING"> 男優・女優の演技が演技感ありすぎる</label>
+          <label><input type="checkbox" name="reason" value="LONG_OPENING"> OPトークが長い・つまらなさすぎる</label>
+          <label><input type="checkbox" name="reason" value="UNNECESSARY_TALK"> 挿入中に不必要な話をしてる</label>
+          <label><input type="checkbox" name="reason" value="PASSIVE_FEMALE"> 女優がマグロ過ぎる</label>
+          <label><input type="checkbox" name="reason" value="FAKE_CUM"> 偽汁(疑似精子)</label>
+          <label><input type="checkbox" name="reason" value="BAD_QUALITY"> 画質・音声が悪い</label>
+          <label><input type="checkbox" name="reason" value="STUDIO_LIKE"> 撮影場所がスタジオ過ぎる</label>
+          <label><input type="checkbox" name="reason" value="BAD_CAMERA"> カメラワークが悪い</label>
+          <label><input type="checkbox" name="reason" value="SHORT_SEX"> 挿入シーン短すぎ(前戯長すぎ)</label>
+          <label><input type="checkbox" name="reason" value="WRONG_POSITION_ORDER"> フィニッシュまでの体位の順番がおかしい</label>
+        </div>
+      </div>
+
+      <button id="reportButton">報告</button>
+      <div id="reportError" class="error-text" style="display: none;"></div>
+    </div>
+
+    <div id="successMessage" style="display: none; text-align: center; padding: 20px;">
+      <p style="font-size: 16px; color: green;">報告ありがとうございます！</p>
+      <p class="muted">ポイントが付与されました。</p>
+      <button id="reportAgainButton" style="margin-top: 10px;">続けて報告する</button>
     </div>
   </div>
 
-    <button id="reportButton">報告</button>
-  </div>
-
-  <div id="successMessage" style="display: none; text-align: center; padding: 20px;">
-    <p style="font-size: 16px; color: green;">報告ありがとうございます！</p>
-    <p><span id="pointsEarned">5</span>ポイント追加されました。</p> 
-    <!-- Points are hardcoded for now -->
-  </div>
-
-  <script type="module" src="popup.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>
