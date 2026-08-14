@@ -57,16 +57,34 @@ Phase 2: セキュリティ基盤 (problem: B-1, B-2, B-5)
 =====================================================================
 目的: Firestoreルールを整備し、ポイント付与をサーバー側に移す
 
-Work 2-1: 現状のFirestoreルール確認 ※ユーザーと一緒に実施
-  [ ] Firebaseコンソールで現在のルールを確認し、内容を problem.txt に記録
-      (ユーザーにコンソール確認を依頼 or firebase CLI で取得)
+Work 2-1: 現状のFirestoreルール確認 【完了 2026-08-14】
+  [x] Rules REST API(firebase-tools の認証トークン利用)で本番ルールを取得
+  [x] firestore.rules.production-backup-2026-08-14 に現行ルールを保存
+  [x] problem.txt を実態に合わせて更新(B-1 再定義 / B-4 訂正 / C-4・D-6 追加)
+  ★判明した重要事項(Work 2-2 以降の前提を左右):
+    - 本番ルールは整備済み(全開放ではなかった)。B-1は「リポジトリ管理化+
+      スキーマ検証追加+B-2/B-3ギャップ修正」に再定義
+    - Chrome拡張は extension_reports に未認証で書込→現行ルールで既に全拒否
+      (実質機能していない)。かつ検索は posts のみ照会のため保存先が別 (C-4)
+    - posts read=認証必須のため匿名検索は実質不可 (D-6)
+  ★要ユーザー方針決定(Work 2-2/2-5 着手前に必須):
+    Q-a (C-4) 拡張の報告保存先を posts に統一してよいか。統一時、拡張は
+              videoTitle を取得しないが videoTitle をどう扱うか(任意化 等)
+    Q-b (D-6) 検索を「ログイン必須」にするか、「未ログインでも可(posts read公開)」か
 
-Work 2-2: firestore.rules の新規作成 (B-1)
-  [ ] firestore.rules を作成: posts(read公開/createは auth必須+authorId一致+
-      スキーマ検証/update・delete本人のみ)、users(本人のみ・points等の保護
-      フィールドは書込不可)、products・prices(readのみ)、customers(client書込禁止)
-  [ ] firebase.json に firestore.rules を登録
+Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) ※Q-a/Q-b 決定後
+  [ ] 現行 backup をベースに firestore.rules を作成し、以下を反映:
+      - users: points / reportCount / totalPosts / role / subscriptionStatus 等の
+        保護フィールドをクライアント更新不可に(Functionsのみ)。B-2 対応
+      - customers/**(subscriptions等): クライアント write を禁止に。B-3 対応
+      - posts: create/update のスキーマ検証(videoId形式・reasonsコード配列・
+        文字数上限)を追加
+      - posts read の公開範囲を Q-b の決定に合わせる
+      - 拡張の保存先(Q-a)に合わせて posts もしくは extension_reports のルール調整
+  [ ] firebase.json に firestore ルール設定を登録
   [ ] エミュレータでルールの単体テストを作成(@firebase/rules-unit-testing)
+  ※デプロイは Work 2-3(ポイントのサーバー化)と 2-5(拡張認証)完了後に一括で行う
+    (先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)
 
 Work 2-3: ポイント付与のサーバー移行 (B-2)
   [ ] functions に posts onCreate トリガー関数 awardPointsOnPost を実装

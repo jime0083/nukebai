@@ -1,0 +1,104 @@
+// 【本番環境の現行 Firestore ルール バックアップ】
+// 取得日: 2026-08-14 / project: nukebuy
+// ruleset: projects/nukebuy/rulesets/117826f4-6e56-4d25-887a-c6b7bb56dca3
+// 用途: Work 2-2 で firestore.rules を作成する際のベースライン兼ロールバック用の記録。
+//       このファイルは適用対象ではなく、あくまで現状記録。
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザーが認証されているか確認するヘルパー関数
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // リクエストが自分自身のデータに対するものか確認するヘルパー関数
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // postsコレクション: 認証済みユーザーのみ閲覧可能、自身のUIDと一致する投稿のみ作成可能
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+      // 投稿の更新と削除は作成者のみ可能
+      allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+    }
+
+    // usersコレクション: 認証済みのユーザーは、自身のドキュメントの作成、読み取り、更新ができる
+    match /users/{userId} {
+      allow create, read, update: if isUser(userId);
+      // 削除は明示的に禁止（アカウント削除はCloud Functionsで管理）
+      allow delete: if false;
+    }
+
+    // extension_reports コレクション: 認証済みユーザーのみ作成可能、データの検証を追加
+    match /extension_reports/{reportId} {
+      allow create: if isAuthenticated() &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.size() <= 1000000; // サイズ制限を追加
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // --- ここから課金機能のためのルール ---
+
+    // 商品情報: 認証済みユーザーのみ読み取り可能
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      // 書き込みは管理者機能またはCloud Functionsのみが行うため禁止
+      allow write: if false;
+    }
+
+    // 商品価格情報: 認証済みユーザーのみ読み取り可能
+    match /products/{productId}/prices/{priceId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // 顧客情報 (Stripe拡張機能が使用)
+    match /customers/{userId} {
+      allow read, write: if isUser(userId);
+
+      // 支払い方法情報 (Stripe拡張機能が使用)
+      match /payment_methods/{paymentId} {
+        allow read, write: if isUser(userId);
+      }
+
+      // サブスクリプション情報
+      match /subscriptions/{subscriptionId} {
+        allow read, write: if isUser(userId);
+      }
+
+      // チェックアウトセッション
+      match /checkout_sessions/{sessionId} {
+        allow read, write: if isUser(userId);
+      }
+
+      // 支払い情報
+      match /payments/{paymentId} {
+        allow read: if isUser(userId);
+        allow write: if false; // Cloud Functionsのみ書き込み可能
+      }
+
+      // 解約履歴
+      match /subscription_cancellations/{cancellationId} {
+        allow read: if isUser(userId);
+        allow write: if false; // Cloud Functionsのみ書き込み可能
+      }
+    }
+
+    // サブスクリプション状態変更のログ
+    match /subscription_logs/{logId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow write: if false; // Cloud Functionsのみ書き込み可能
+    }
+
+    // --- その他のコレクション ---
+
+    // デフォルトでは、認証されていないアクセスをすべて拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
