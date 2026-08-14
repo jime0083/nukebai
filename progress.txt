@@ -67,24 +67,26 @@ Work 2-1: 現状のFirestoreルール確認 【完了 2026-08-14】
     - Chrome拡張は extension_reports に未認証で書込→現行ルールで既に全拒否
       (実質機能していない)。かつ検索は posts のみ照会のため保存先が別 (C-4)
     - posts read=認証必須のため匿名検索は実質不可 (D-6)
-  ★要ユーザー方針決定(Work 2-2/2-5 着手前に必須):
-    Q-a (C-4) 拡張の報告保存先を posts に統一してよいか。統一時、拡張は
-              videoTitle を取得しないが videoTitle をどう扱うか(任意化 等)
-    Q-b (D-6) 検索を「ログイン必須」にするか、「未ログインでも可(posts read公開)」か
+  ★ユーザー方針決定【2026-08-14 回答済み】:
+    Q-a (C-4) → posts に統一。videoTitle は任意化(拡張は未取得のため)
+    Q-b (D-6) → 検索はログイン必須。posts read は認証必須のまま維持し、
+                未ログイン検索UI・匿名カウントは撤去(実装は Phase 5 Work 5-2 に統合)
 
-Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) ※Q-a/Q-b 決定後
+Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) ※Q-a/Q-b 決定済み
   [ ] 現行 backup をベースに firestore.rules を作成し、以下を反映:
       - users: points / reportCount / totalPosts / role / subscriptionStatus 等の
         保護フィールドをクライアント更新不可に(Functionsのみ)。B-2 対応
       - customers/**(subscriptions等): クライアント write を禁止に。B-3 対応
-      - posts: create/update のスキーマ検証(videoId形式・reasonsコード配列・
-        文字数上限)を追加
-      - posts read の公開範囲を Q-b の決定に合わせる
-      - 拡張の保存先(Q-a)に合わせて posts もしくは extension_reports のルール調整
+      - posts: create/update のスキーマ検証(videoId必須・文字列、reasonsコード配列、
+        videoTitle は任意だが有れば文字列+上限、authorId==uid)を追加。Q-a反映
+      - posts read: 認証必須のまま維持(Q-b=検索ログイン必須)
+      - extension_reports: 拡張は posts に統一するため新規書込は不要。
+        既存データ読取用に read ルールは残す(write は塞ぐ方向で検討)
   [ ] firebase.json に firestore ルール設定を登録
   [ ] エミュレータでルールの単体テストを作成(@firebase/rules-unit-testing)
   ※デプロイは Work 2-3(ポイントのサーバー化)と 2-5(拡張認証)完了後に一括で行う
-    (先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)
+    (先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)。
+    デプロイ前にユーザーへ影響範囲を報告する(ルール4の注意事項)
 
 Work 2-3: ポイント付与のサーバー移行 (B-2)
   [ ] functions に posts onCreate トリガー関数 awardPointsOnPost を実装
