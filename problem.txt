@@ -241,18 +241,22 @@
 [E-3] 巨大ファイル
   - 内容: Home.vue 1411行 / Subscription.vue 1106行 / Campaign.vue 870行 /
     Prerelease.vue 664行。ルール上限(max 800、推奨200-400)超過
-  - ステータス: 未着手
+  - ステータス: 一部解決。Campaign/Prerelease は削除(Phase1)、Subscription は
+    近日実装予定ページ化で約90行に(Phase4)。Home.vue(約1250行)の分割は
+    Work6-2 として保留(要ランタイム視覚検証。progress.txt 参照)
 
 [E-4] テスト・Lint・型チェックが一切ない
   - 内容: テスト0件、ESLint/Prettier 未設定(フロント側)、TypeScript未導入。
     package.json 名も "vite-vue-starter" のまま
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-15 Work6-1。Vitest 27件・ESLint・Prettier 導入、
+    package.json name 修正)。※TypeScript 未導入は現状維持(プロジェクト方針)
 
 [E-5] ルーターガードの認証同期が脆い
   - 内容: waitForUserStoreInitialization + getCurrentUser の二重待機で、
     auth と store の不一致時にログインへ強制リダイレクトする暫定処理
     (router/index.js 内に警告コメントあり)
-  - ステータス: 未着手
+  - ステータス: 保留(Work6-3)。認証は現状動作。リファクタは認証E2Eの実機検証が
+    必須のため、検証可能な状況で実施(progress.txt 参照)
 
 [E-6] サイト名表記の混在
   - 内容: ヌケバイ / NukeBye / NukeBAI / Nukebuy / Nukebai が UI・コード内で混在
