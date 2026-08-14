@@ -9,14 +9,29 @@ const db = firebase.firestore();
 // ログイン状態はローカル永続化(ポップアップを閉じても維持)
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-// 動画IDの正規化(前後空白除去 + 全角→半角)
-// ※ Web(src/utils/videoId.js)との完全統一は Work 6-4 で実施予定。
-//   ここでは明らかに誤っていた toLowerCase を廃止し、trim + 全角半角のみ行う。
-function normalizeVideoId(id) {
-  if (!id) return '';
-  return id
-    .replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-    .trim();
+// 動画IDの正規化
+// ※ Web(src/utils/videoId.js)の normalizeVideoId と同一ロジック(拡張は別コンテキスト
+//   のため import できず同一アルゴリズムをインライン化)。両者を変更する際は必ず揃えること。
+//   ルール: 全角→半角 / 大文字化 / trim / 区切り統一 / 「英字+数字」で区切り無しは分割。
+function normalizeVideoId(input) {
+  if (input === null || input === undefined) return '';
+  let s = String(input);
+  // 全角英数記号(！-～)→ 半角
+  s = s.replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  // 全角スペース → 半角スペース
+  s = s.replace(/　/g, ' ');
+  s = s.trim().toUpperCase();
+  if (s === '') return '';
+  // 区切り(空白/アンダースコア/ドット)→ ハイフン、連続ハイフンを1つに、両端ハイフン除去
+  s = s.replace(/[\s_.]+/g, '-');
+  s = s.replace(/-+/g, '-');
+  s = s.replace(/^-+|-+$/g, '');
+  // 「英字のみ + 数字のみ」で区切りが無い場合はハイフンを挿入
+  const m = s.match(/^([A-Z]+)(\d+)$/);
+  if (m) {
+    s = `${m[1]}-${m[2]}`;
+  }
+  return s;
 }
 
 // URL から動画IDを推測(ベストエフォート)

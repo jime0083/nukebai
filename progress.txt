@@ -288,12 +288,12 @@ Work 6-3: 認証フローの整理 (E-5)
       router/index.js のガードを単一の初期化 Promise 待ちに簡素化
   [ ] auth と store の不一致時の強制ログインリダイレクトを解消
 
-Work 6-4: Chrome拡張の機能改善 (C-1 関連)
+Work 6-4: Chrome拡張の機能改善 (C-1 関連) 【完了 2026-08-15】
   ※認証実装は Work 2-5 へ移動済み(2026-08-14 継続方針決定のため)
-  [ ] 拡張の videoId 正規化を Web 側(utils/videoId.js)と同一ロジックに統一
-      (現状の小文字化は Web と逆方向のため必ず修正)
-  [ ] 拡張の報告理由リストを stores/reasons.js のマスタと同期(手動同期で可、
-      同期手順をコメントで明記)
+  [x] 拡張の normalizeVideoId を Web 側(utils/videoId.js)と同一ロジックに統一
+      (全角半角/大文字/区切り統一/分割。両者を変える際は揃える旨をコメント明記)
+  [x] 拡張の報告理由14件が stores/reasons.js のマスタと完全一致することを確認
+      (Work 2-5 で BAD_CAMERA 追加済み。照合スクリプトで一致を検証)
 
 Work 6-5: SEO・表示改善 (F-3, F-4)
   [ ] @vueuse/head 導入でページ別 title/description を設定、OGP タグ追加
