@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { db } from '../firebase'
-import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { useUserStore } from './user'
 
 export const useReviewsStore = defineStore('reviews', () => {
@@ -81,8 +81,10 @@ export const useReviewsStore = defineStore('reviews', () => {
       }
       
       // 注: 同じ動画IDでも異なるユーザーからの報告は許可する
-      
+
       // Add new review
+      // ポイント付与・reportCount/totalPosts の加算はサーバー(awardPointsOnPost
+      // トリガー)が行う。クライアントからは users を書き込まない(B-2 対応)。
       const newReviewData = {
         ...reviewData,
         authorId: userStore.user.uid,
@@ -91,36 +93,12 @@ export const useReviewsStore = defineStore('reviews', () => {
         negativeReviewCount: 0,
         source: 'web'
       }
-      
-      await addDoc(collection(db, 'posts'), newReviewData)
-      
-      // Add random points (20-30)
-      const pointsEarned = Math.floor(Math.random() * 11) + 15
-      
-      // 現在のユーザー情報を取得
-      const currentReportCount = userStore.user.reportCount || 0;
-      const newReportCount = currentReportCount + 1;
-      
-      // Update user's points in Firestore
-      const userRef = doc(db, 'users', userStore.user.uid)
-      await updateDoc(userRef, {
-        points: (userStore.points || 0) + pointsEarned,
-        reportCount: newReportCount,
-        totalPosts: (userStore.user.totalPosts || 0) + 1
-      })
-      
-      // Update local state
-      userStore.updatePoints((userStore.points || 0) + pointsEarned)
-      
-      // ローカルのユーザー情報も更新
-      if (userStore.user) {
-        userStore.user.reportCount = newReportCount;
-      }
-      userStore.incrementReportCount()
-      
+
+      const docRef = await addDoc(collection(db, 'posts'), newReviewData)
+
       return {
         success: true,
-        pointsEarned
+        postId: docRef.id
       }
     } catch (err) {
       console.error('Error submitting review:', err)
@@ -130,13 +108,40 @@ export const useReviewsStore = defineStore('reviews', () => {
       loading.value = false
     }
   }
-  
+
+  // サーバー(awardPointsOnPost)が post に書き戻す pointsEarned を待つ。
+  // 指定時間内に付与が確認できなければ null を返す(表示用のベストエフォート)。
+  function waitForAwardedPoints(postId, timeoutMs = 8000) {
+    return new Promise((resolve) => {
+      let settled = false
+      const finish = (value) => {
+        if (settled) return
+        settled = true
+        if (typeof unsubscribe === 'function') unsubscribe()
+        clearTimeout(timer)
+        resolve(value)
+      }
+      const timer = setTimeout(() => finish(null), timeoutMs)
+      const unsubscribe = onSnapshot(
+        doc(db, 'posts', postId),
+        (snap) => {
+          const data = snap.data()
+          if (data && typeof data.pointsEarned === 'number') {
+            finish(data.pointsEarned)
+          }
+        },
+        () => finish(null)
+      )
+    })
+  }
+
   return {
     reviews,
     loading,
     error,
     fetchReviews,
     getReviewById,
-    submitReview
+    submitReview,
+    waitForAwardedPoints
   }
 })

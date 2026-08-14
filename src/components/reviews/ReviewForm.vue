@@ -2,7 +2,8 @@
   <div class="review-form-container">
     <div v-if="success" class="success-message">
       <h3>レビューが投稿されました！</h3>
-      <p>{{ pointsEarned }}ポイントを獲得しました！</p>
+      <p v-if="pointsEarned">{{ pointsEarned }}ポイントを獲得しました！</p>
+      <p v-else>ポイントが付与されました！</p>
       <button class="primary" @click="success = false">新しいレビューを投稿する</button>
     </div>
     
@@ -74,11 +75,13 @@
 import { ref, computed } from 'vue'
 import { useReasonsStore } from '../../stores/reasons'
 import { useReviewsStore } from '../../stores/reviews'
+import { useUserStore } from '../../stores/user'
 
 
 const emit = defineEmits(['submitted'])
 const reasonsStore = useReasonsStore()
 const reviewsStore = useReviewsStore()
+const userStore = useUserStore()
 
 const videoId = ref('')
 const videoTitle = ref('')
@@ -131,9 +134,16 @@ async function submitReview() {
     const result = await reviewsStore.submitReview(reviewData)
     if (result && result.success) {
       success.value = true
-      pointsEarned.value = result.pointsEarned
+      pointsEarned.value = 0
       resetForm()
       emit('submitted')
+      // サーバー(トリガー)が付与したポイントを待って表示に反映(取得できなければ
+      // 固定メッセージのまま)
+      const awarded = await reviewsStore.waitForAwardedPoints(result.postId)
+      if (awarded) {
+        pointsEarned.value = awarded
+        userStore.updatePoints((userStore.points || 0) + awarded)
+      }
     } else {
       error.value = reviewsStore.error || 'レビューの投稿に失敗しました。'
     }

@@ -92,13 +92,16 @@ Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) �
     一括で行う(先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)。
     デプロイ前にユーザーへ影響範囲を報告する(ルール4の注意事項)
 
-Work 2-3: ポイント付与のサーバー移行 (B-2)
-  [ ] functions に posts onCreate トリガー関数 awardPointsOnPost を実装
-      (15-25ptランダム付与 + reportCount/totalPosts インクリメント)
-  [ ] stores/reviews.js submitReview() から users への updateDoc を削除し、
-      付与結果は users doc の onSnapshot(または再取得)で反映する形に変更
-  [ ] ReviewForm の成功メッセージを「ポイント付与されました」(具体値はサーバー
-      確定後に表示 or 固定文言)に調整
+Work 2-3: ポイント付与のサーバー移行 (B-2) 【実装完了 2026-08-14】
+  [x] functions に posts onCreate トリガー awardPointsOnPost を実装
+      (15-25ptサーバー側決定 + reportCount/totalPosts を FieldValue.increment、
+       付与ポイントを post.pointsEarned に書き戻し)
+  [x] stores/reviews.js submitReview() から users への updateDoc を削除。
+      代わりに waitForAwardedPoints(postId) で post.pointsEarned を監視して表示
+  [x] ReviewForm を調整: サーバー付与ポイントを取得できれば「Nポイント獲得」、
+      取得できなければ「ポイントが付与されました」の固定文言。取得時は
+      userStore.points もローカル反映
+  ※本番反映は一括デプロイ時(Work 2-5 完了後)。トリガーは Cloud Functions デプロイが必要
 
 Work 2-4: functions の秘密情報整理 (B-5, A-2)
   [ ] functions/index.js の validateCouponV3 を削除(課金凍結決定・Stripe利用
