@@ -26,11 +26,19 @@ Vue 3 + Vite + Firebase 構成の「ヌけないアダルト動画の情報を�
 - このプロセスの省略・順序変更を禁止する
 - problem.txt / progress.txt への記録前に修正作業を始めてはならない
 
-### ルール4: 作業終了後は毎回 git にコミットする(2026-08-14 追加)
-- 1つの作業(Work)が終了するたびに、必ず git commit を実行する
-- コミットせずに次の作業へ進むことを禁止する
-- コミット形式: `<type>: <説明>`(feat / fix / refactor / docs / test / chore)
-- コミット前に progress.txt のステータス更新も済ませ、変更に含める
+### ルール4: 作業終了後はコミット・push・本番反映まで行う(2026-08-14 追加/更新)
+1つの作業(Work)が終了するたびに、以下を必ず実行する:
+1. **git commit**(コミットせず次の作業へ進むことを禁止)
+   - コミット形式: `<type>: <説明>`(feat / fix / refactor / docs / test / chore)
+   - コミット前に progress.txt のステータス更新も済ませ、変更に含める
+2. **git push**(origin/main へ push する)
+3. **本番環境への反映**(ユーザーが本番環境で動作確認できる状態にする)
+   - フロント変更: `npm run build` → `firebase deploy --only hosting`
+   - Firestoreルール変更: `firebase deploy --only firestore:rules`
+   - Functions変更: `firebase deploy --only functions`
+   - 反映後、ユーザーに本番URLと確認ポイントを伝える
+- **注意**: 本番反映が他機能を壊すリスクがある場合(例: 認証実装前のルール強化)は、
+  ルール1に従い反映前に必ずユーザーへ確認・影響範囲を報告する
 
 ## 管理ファイルの役割
 - **修正案.txt**: アプリ全体の調査結果と仕様提案(2026-08-14 作成)
