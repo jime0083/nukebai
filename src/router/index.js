@@ -158,7 +158,6 @@ router.beforeEach(async (to, from, next) => {
       // ストアにユーザーがいない、または認証ユーザーとストアのユーザーが異なる場合
       // App.vueでのストア設定処理が完了するのを待つか、エラーとして扱うか
       // ここでは一旦、ログインへリダイレクトする（App.vueでの処理に期待）
-      console.warn('User in auth, but mismatch or not in store. Redirecting. User:', user, 'Store User:', userStore.user);
       next({ name: 'Login', query: { redirect: to.fullPath, reason: 'user_store_sync_issue' } });
       return;
     }

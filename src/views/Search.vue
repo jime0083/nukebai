@@ -201,7 +201,6 @@ const reasonCounts = computed(() => {
   }
   const counts = {};
   reports.value.forEach(report => {
-    console.log('Inspecting report data:', report); // デバッグ用に追加
     if (report.reasons && Array.isArray(report.reasons) && report.reasons.length > 0) {
       report.reasons.forEach(reasonCode => {
         const displayName = reasonDisplayMap[reasonCode] || reasonCode; // マッピングにあれば表示名、なければ元のコード

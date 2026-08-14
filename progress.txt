@@ -43,10 +43,11 @@ Work 1-3: 終了済みキャンペーンコードの削除 (D-1) 【完了 2026-
       表記・リンク・CSSを全て削除(TheHeader.vue のリンクとCSS含む)。残存ゼロを確認
   [x] ページ削除で未参照になった画像6点(ple1-5.jpg / pos-man10.png)を削除
 
-Work 1-4: console.log の除去 (E-2)
-  [ ] src/ 配下の console.log / console.warn を削除(console.error はエラー
-      ハンドリング内のみ許可)
-  [ ] functions/ 配下の デバッグ用 console.log を削除(運用ログは logger に置換)
+Work 1-4: console.log の除去 (E-2) 【完了 2026-08-14】
+  [x] src/ 配下の console.log / console.warn を全58箇所削除(console.error のみ残存)
+  [-] functions/ 配下の console.log 除去は見送り: 対象2ファイル
+      (index.js の validateCouponV3 / paypal.js)は Phase 2・Phase 4 で
+      ファイルごと削除が決定済みのため、二度手間を回避
 
 Phase 1 完了条件: npm run build が通り、全ページが表示エラーなく動作すること
 → 完了したら停止してユーザーの指示を待つ

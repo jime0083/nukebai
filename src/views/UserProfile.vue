@@ -55,7 +55,6 @@ const showSurveyButton = computed(() => {
 
 const handleUsePoints = () => {
   // TODO: Implement point usage logic (e.g., show popup)
-  console.log('「ポイントを利用する」ボタンがクリックされました。');
   alert('ポイント利用機能は現在準備中です。');
 };
 
@@ -65,7 +64,6 @@ const handleRedeemCoupon = () => {
     return;
   }
   // TODO: Implement coupon redemption logic
-  console.log(`クーポンコード「${couponCode.value}」を利用しようとしています。`);
   alert(`クーポンコード「${couponCode.value}」の利用機能は現在準備中です。`);
   couponCode.value = ''; // 入力フィールドをクリア
 };

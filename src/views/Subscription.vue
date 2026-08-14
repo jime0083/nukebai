@@ -43,7 +43,6 @@ function calculateDiscountedPrice() {
   const originalPrice = selectedPrice.value.amount;
   const coupon = appliedCoupon.value;
   
-  console.log('割引計算中のクーポンデータ:', coupon);
   
   // 様々なデータ構造に対応
   if (coupon.percent_off && typeof coupon.percent_off === 'number') {
@@ -74,7 +73,6 @@ function calculateDiscountedPrice() {
     
   } else {
     // 割引情報が見つからない場合は元の価格を返す
-    console.log('割引情報が見つかりませんでした。元の価格を返します:', originalPrice);
     return originalPrice;
   }
 }
@@ -90,11 +88,9 @@ const currentUser = computed(() => auth.currentUser)
 // Firestoreから価格プランを取得
 async function fetchPrices() {
   try {
-    console.log('価格プランを取得中...');
     const pricesCollection = collection(db, 'products');
     const pricesSnapshot = await getDocs(pricesCollection);
     
-    console.log(`取得したproducts: ${pricesSnapshot.docs.length}件`);
     
     let fetchedPrices = [];
     let foundPrices = false;
@@ -102,7 +98,6 @@ async function fetchPrices() {
     // Firestoreからのデータ取得を試みる
     for (const productDoc of pricesSnapshot.docs) {
       const productData = productDoc.data();
-      console.log('商品データ:', productData);
       
       // アクティブな商品のみ表示
       if (productData.active) {
@@ -112,11 +107,9 @@ async function fetchPrices() {
         );
         
         const priceSnapshot = await getDocs(priceQuery);
-        console.log(`商品 ${productDoc.id} の価格データ: ${priceSnapshot.docs.length}件`);
         
         priceSnapshot.docs.forEach((priceDoc) => {
           const priceData = priceDoc.data();
-          console.log('価格データ:', priceData);
           foundPrices = true;
           
           fetchedPrices.push({
@@ -135,7 +128,6 @@ async function fetchPrices() {
     
     // Firestoreから価格データが取得できなかった場合はテストデータを使用
     if (!foundPrices || fetchedPrices.length === 0) {
-      console.log('商品データが取得できなかったため、テスト用データを使用します');
       fetchedPrices = [];
       
       fetchedPrices.push({
@@ -161,7 +153,6 @@ async function fetchPrices() {
       });
     }
     
-    console.log('最終的な価格データ:', fetchedPrices);
     prices.value = fetchedPrices;
     loading.value = false;
   } catch (error) {
@@ -215,23 +206,19 @@ async function checkSubscription() {
 // Stripe要素の初期化
 async function initializeStripeElements() {
   try {
-    console.log('Stripe要素を初期化中...');
     const stripeInstance = await stripePromise;
     if (!stripeInstance) {
       console.error('Stripeインスタンスの初期化に失敗しました');
       return;
     }
     
-    console.log('Stripeインスタンス:', stripeInstance);
     stripe.value = stripeInstance;
     elements.value = stripeInstance.elements();
     
-    console.log('カード要素を作成中...');
     // カード要素のマウント（遅延させることで確実にDOM要素が存在することを確認）
     // より長い遅延を設定
     setTimeout(() => {
       try {
-        console.log('カード要素のマウントを試みます...');
         // 共通のスタイル設定
         const elementStyle = {
           base: {
@@ -250,7 +237,6 @@ async function initializeStripeElements() {
           }
         };
         
-        console.log('個別のカード要素を作成中...');
         
         // カード番号要素
         cardNumber.value = elements.value.create('cardNumber', {
@@ -267,7 +253,6 @@ async function initializeStripeElements() {
           style: elementStyle
         });
         
-        console.log('カード要素をDOMにマウント中...');
         
         // 各要素を対応するDOM要素にマウント
         const cardNumberMount = document.getElementById('card-number-element');
@@ -284,7 +269,6 @@ async function initializeStripeElements() {
           cardExpiry.value.on('change', handleCardChange);
           cardCvc.value.on('change', handleCardChange);
           
-          console.log('すべてのカード要素のマウントが完了しました');
         } else {
           console.error('カード要素のマウントに必要なDOM要素が見つかりませんでした');
         }
@@ -298,7 +282,6 @@ async function initializeStripeElements() {
 }
 
 function handleCardChange(event) {
-  console.log('カード入力の変更イベント:', event);
   
   // 各フィールドの完了状態をチェック
   if (event.elementType === 'cardNumber' && event.complete) {
@@ -321,7 +304,6 @@ function handleCardChange(event) {
   if (cardNumber.value && cardExpiry.value && cardCvc.value) {
     // すべての要素が正しく初期化されていれば、完了状態を更新
     cardComplete.value = event.complete;
-    console.log('cardComplete値を更新:', cardComplete.value);
   }
 }
 
@@ -331,7 +313,6 @@ function selectPlan(price) {
   // プランが選択されたらStripeエレメントを初期化
   // この後にDOMが更新されるまで少し待つ
   setTimeout(() => {
-    console.log('プラン選択後、Stripe要素を初期化します');
     initializeStripeElements();
   }, 100);
 }
@@ -362,7 +343,6 @@ async function validateCoupon() {
       timeout: 60000 // 60秒のタイムアウトを設定
     });
     
-    console.log('クーポンコード送信:', couponCode.value);
     
     const { data } = await validateCouponFunction({
       couponCode: couponCode.value,
@@ -371,8 +351,6 @@ async function validateCoupon() {
     });
     
     // デバッグ用に返ってきたデータを詳細に表示
-    console.log('クーポン検証結果:', data);
-    console.log('クーポンデータ全体:', data);
     
     // クーポンデータを適切な形式に整形する
     let formattedCoupon = {};
@@ -381,24 +359,13 @@ async function validateCoupon() {
       // クーポン情報を取得するための様々なデータ構造に対応
       if (data.coupon) {
         formattedCoupon = data.coupon;
-        console.log('クーポン情報を直接使用:', formattedCoupon);
       } else if (data.promotion_code && data.promotion_code.coupon) {
         formattedCoupon = data.promotion_code.coupon;
-        console.log('プロモーションコードからクーポン情報を使用:', formattedCoupon);
       }
       
       // 割引情報を抽出
       if (data.discount) {
         formattedCoupon.discount = data.discount;
-        console.log('割引情報を追加:', data.discount);
-      }
-      
-      // 割引情報が親つからない場合のログ出力
-      if (!formattedCoupon.amount_off && !formattedCoupon.percent_off && 
-          (!formattedCoupon.discount || 
-           (!formattedCoupon.discount.amount_off && !formattedCoupon.discount.percent_off))) {
-        console.log('割引情報が見つからないため、クーポン情報が正しく連携されていません');
-        console.log('バックエンド関数からの完全なレスポンス:', data);
       }
       
       // クーポン名の取得
@@ -413,7 +380,6 @@ async function validateCoupon() {
       appliedCoupon.value = formattedCoupon;
       couponMessage.value = `${couponName}が適用されました！`;
       
-      console.log('整形後のクーポンデータ:', formattedCoupon);
     } else {
       couponMessage.value = data.message || 'クーポンコードが無効です';
       isCouponValid.value = false;
@@ -431,49 +397,40 @@ async function validateCoupon() {
 
 // サブスクリプションを開始する処理
 async function startSubscription() {
-  console.log('startSubscription関数が呼び出されました');
   
   // すでに処理中なら重複実行を防止
   if (processingPayment.value) {
-    console.log('既に処理中のため、重複実行を防止します');
     return;
   }
   
   // カード入力が完了しているか確認
-  console.log('カード完了状態:', cardComplete.value);
   if (!cardComplete.value) {
-    console.log('カード情報が完了していません');
     cardError.value = 'カード情報を正しく入力してください。';
     return;
   }
 
   if (!currentUser.value) {
-    console.log('ユーザーがログインしていません');
     router.push('/login');
     return;
   }
   
   if (!selectedPrice.value) {
-    console.log('価格が選択されていません', selectedPrice.value);
     cardError.value = 'プランを選択してください。';
     return;
   }
   
   if (!stripe.value || !elements.value) {
-    console.log('Stripeインスタンスがありません');
     cardError.value = 'Stripe初期化エラー。ページを再読み込みしてください。';
     return;
   }
 
   try {
-    console.log('サブスクリプション処理を開始します');
     processingPayment.value = true;
     cardError.value = '';
     
     // 60秒後に強制的にタイムアウト処理を行う
     const timeoutId = setTimeout(() => {
       if (processingPayment.value) {
-        console.log('サブスクリプション処理が60秒経過。強制的にリダイレクトします');
         processingPayment.value = false;
         window.location.replace(window.location.origin + '/success');
       }
@@ -488,16 +445,13 @@ async function startSubscription() {
     }
     
     // カスタマーをFirestoreに作成（まだ存在しない場合）
-    console.log('Firestoreにカスタマー情報を作成/更新します', currentUser.value.uid);
     const customerDocRef = doc(db, 'customers', currentUser.value.uid);
     await setDoc(customerDocRef, {
       email: currentUser.value.email,
       created: serverTimestamp()
     }, { merge: true });
-    console.log('カスタマー情報を作成/更新しました');
 
     // Stripe Payment Method(カード情報)を作成
-    console.log('カード情報から支払い方法(PaymentMethod)を作成します');
     const { error: stripeError, paymentMethod } = await stripe.value.createPaymentMethod({
       type: 'card',
       card: cardNumber.value,  // カード番号要素を指定すれば、他の要素も同じセッションとして利用される
@@ -513,10 +467,8 @@ async function startSubscription() {
       return;
     }
 
-    console.log('支払い方法の作成に成功:', paymentMethod);
 
     // ユーザーの支払い方法をFirestoreに保存
-    console.log('支払い方法をFirestoreに保存します');
     const paymentMethodsRef = collection(customerDocRef, "payment_methods");
     await addDoc(paymentMethodsRef, {
       id: paymentMethod.id,
@@ -524,10 +476,8 @@ async function startSubscription() {
       card: paymentMethod.card,
       created: serverTimestamp()
     });
-    console.log('支払い方法をFirestoreに保存しました');
 
     // 直接サブスクリプションを作成
-    console.log('サブスクリプションを直接作成します', selectedPrice.value.id);
     const subscriptionsRef = collection(customerDocRef, 'subscriptions');
     
     // クーポンコードがある場合は追加
@@ -544,14 +494,11 @@ async function startSubscription() {
       }
     };
     
-    console.log('サブスクリプションデータ:', subscriptionData);
     const subscriptionDoc = await addDoc(subscriptionsRef, subscriptionData);
-    console.log('サブスクリプションドキュメント作成:', subscriptionDoc.id);
 
     // サブスクリプションの状態をリアルタイムで監視
     const unsubscribe = onSnapshot(doc(subscriptionsRef, subscriptionDoc.id), async (snap) => {
       const data = snap.data();
-      console.log('サブスクリプション状態の更新:', data);
 
       if (data?.error) {
         console.error('サブスクリプションエラー:', data.error);
@@ -563,7 +510,6 @@ async function startSubscription() {
 
       // サブスクリプションがアクティブになった場合またはサブスクリプションが作成された場合
       if (data?.status === 'active' || data?.status === 'trialing' || data?.price) {
-        console.log('サブスクリプション処理が完了しました。成功ページにリダイレクトします');
         
         // Windowオブジェクトを使用して直接リダイレクト（Vue Routerをバイパス）
         window.location.replace(window.location.origin + '/success');
@@ -573,7 +519,6 @@ async function startSubscription() {
       
       // 後処理ページが必要な場合
       if (data?.latest_invoice?.payment_intent?.client_secret) {
-        console.log('支払い確認が必要です。Stripeの確認ページに進みます。');
         
         // Stripe要素を使用してカード認証を完了させる
         const { error: confirmError } = await stripe.value.confirmCardPayment(
@@ -585,18 +530,14 @@ async function startSubscription() {
           cardError.value = confirmError.message || '支払い処理に失敗しました';
           processingPayment.value = false;
         } else {
-          console.log('支払い確認が完了しました。5秒後に成功ページへリダイレクトします。');
           // 支払い確認完了後、即座にリダイレクト
           setTimeout(() => {
-            console.log('手動でリダイレクトを実行します');
             window.location.replace(window.location.origin + '/success');
           }, 5000);
         }
       } else {
         // サブスクリプション作成後は即座に成功ページへ移動
-        console.log('サブスクリプション作成完了。5秒後に成功ページへリダイレクトします');
         setTimeout(() => {
-          console.log('手動でリダイレクトを実行します');
           processingPayment.value = false;
           window.location.replace(window.location.origin + '/success');
         }, 5000);
@@ -620,7 +561,6 @@ onMounted(() => {
     return;
   }
   
-  console.log('プランを取得します');
   fetchPrices();
   checkSubscription();
   
