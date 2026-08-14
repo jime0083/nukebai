@@ -13,21 +13,9 @@ import Subscription from '../views/Subscription.vue';
 import ContractManagement from '../views/ContractManagement.vue';
 import NotFound from '../views/NotFound.vue';
 import Search from '../views/Search.vue';
-import Campaign from '../views/Campaign.vue';
 import TermsOfService from '../views/TermsOfService.vue';
 import PrivacyPolicy from '../views/PrivacyPolicy.vue';
-import Prerelease from '../views/Prerelease.vue';
 import { useUserStore } from '../stores/user';
-
-// プレリリースキャンペーン期間の判定関数
-function isPrereleaseCampaignPeriod() {
-  const today = new Date();
-  const campaignStartDate = new Date('2025-06-19');
-  const campaignEndDate = new Date('2025-07-31');
-  campaignEndDate.setHours(23, 59, 59, 999); // 終了日の終わりまで
-  
-  return today >= campaignStartDate && today <= campaignEndDate;
-}
 
 const routes = [
   {
@@ -95,11 +83,6 @@ const routes = [
     component: () => import('../views/Success.vue')
   },
   {
-    path: '/campaign',
-    name: 'Campaign',
-    component: Campaign
-  },
-  {
     path: '/terms',
     name: 'TermsOfService',
     component: TermsOfService
@@ -108,11 +91,6 @@ const routes = [
     path: '/privacy',
     name: 'PrivacyPolicy',
     component: PrivacyPolicy
-  },
-  {
-    path: '/prerelease',
-    name: 'Prerelease',
-    component: Prerelease
   }
 ];
 

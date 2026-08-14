@@ -34,14 +34,14 @@ Work 1-2: 不要ファイルの削除 (E-1) 【完了 2026-08-14】
   [x] スクリーンショット (29).png と未参照画像15点を削除
       (ple1-5.jpg / pos-man10.png 等はキャンペーンページ参照のため Work 1-3 後に再確認)
 
-Work 1-3: 終了済みキャンペーンコードの削除 (D-1) ※2026-08-14 承認済み
-  [ ] router/index.js の isPrereleaseCampaignPeriod() と Campaign / Prerelease
+Work 1-3: 終了済みキャンペーンコードの削除 (D-1) 【完了 2026-08-14】
+  [x] router/index.js の isPrereleaseCampaignPeriod() と Campaign / Prerelease
       ルートを削除
-  [ ] src/views/Campaign.vue / Prerelease.vue を削除
-  [ ] Home.vue のコメントアウト済みキャンペーンバナー(39-104行)と関連CSSを削除
-  [ ] 全ファイルを「キャンペーン/プレリリース/campaign/prerelease」で全文検索し、
-      終了済みキャンペーンにまつわる表記・リンク・画像参照を全て削除
-      (TheHeader.vue のコメントアウト済みリンク等を含む)
+  [x] src/views/Campaign.vue / Prerelease.vue を削除
+  [x] Home.vue のコメントアウト済みキャンペーンバナーと関連CSS(約450行)を削除
+  [x] 全ファイルを「キャンペーン/プレリリース/campaign/prerelease」で全文検索し、
+      表記・リンク・CSSを全て削除(TheHeader.vue のリンクとCSS含む)。残存ゼロを確認
+  [x] ページ削除で未参照になった画像6点(ple1-5.jpg / pos-man10.png)を削除
 
 Work 1-4: console.log の除去 (E-2)
   [ ] src/ 配下の console.log / console.warn を削除(console.error はエラー

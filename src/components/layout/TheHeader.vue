@@ -46,8 +46,6 @@ function closeMenu() {
       
       <nav class="main-nav" :class="{ active: showMenu }">
         <ul class="nav-list">
-          <!-- プレオープン期間中は期間限定キャンペーンリンクを非表示 -->
-          <!-- <li><router-link to="/campaign" @click="closeMenu" class="campaign-link">期間限定キャンペーン</router-link></li> -->
           <li><router-link to="/submit-review" @click="closeMenu">報告</router-link></li>
           <li><router-link to="/search" @click="closeMenu">検索</router-link></li>
           <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">ログイン</router-link></li>
@@ -163,23 +161,6 @@ function closeMenu() {
 .register-button:hover {
   background-color: var(--color-primary-hover);
   color: var(--color-on-primary) !important;
-}
-
-.campaign-link {
-  color: white !important;
-  font-weight: 700;
-  position: relative;
-  animation: pulse 2s infinite;
-}
-
-.campaign-link:hover {
-  color: var(--color-primary) !important;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.8; }
-  100% { opacity: 1; }
 }
 
 .user-menu {
