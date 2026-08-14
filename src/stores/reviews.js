@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { db } from '../firebase'
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { useUserStore } from './user'
+import { normalizeVideoId } from '../utils/videoId'
 
 export const useReviewsStore = defineStore('reviews', () => {
   // db is now directly imported and can be used in this scope
@@ -66,20 +67,27 @@ export const useReviewsStore = defineStore('reviews', () => {
     error.value = null
     
     try {
+      // 動画IDを正規化(投稿・検索・拡張で共通ルール。C-1)
+      const normalizedVideoId = normalizeVideoId(reviewData.videoId)
+      if (!normalizedVideoId) {
+        error.value = '有効な動画IDを入力してください。'
+        return false
+      }
+
       // 同じユーザーが同じ動画IDを報告していないかチェック
       const postsRef = collection(db, 'posts')
       const q = query(
-        postsRef, 
-        where('videoId', '==', reviewData.videoId),
+        postsRef,
+        where('videoId', '==', normalizedVideoId),
         where('authorId', '==', userStore.user.uid)
       )
       const querySnapshot = await getDocs(q)
-      
+
       if (!querySnapshot.empty) {
         error.value = 'あなたは既にこの動画を報告しています。'
         return false
       }
-      
+
       // 注: 同じ動画IDでも異なるユーザーからの報告は許可する
 
       // Add new review
@@ -87,6 +95,7 @@ export const useReviewsStore = defineStore('reviews', () => {
       // トリガー)が行う。クライアントからは users を書き込まない(B-2 対応)。
       const newReviewData = {
         ...reviewData,
+        videoId: normalizedVideoId,
         authorId: userStore.user.uid,
         createdAt: serverTimestamp(),
         reportCount: 0,

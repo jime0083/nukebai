@@ -87,9 +87,10 @@ import posMan5Image from '@/assets/images/pos-man5.png';
 import negMan7Image from '@/assets/images/neg-man7.png';
 import negMan1Image from '@/assets/images/neg-man1.png';
 import negMan3Image from '@/assets/images/neg-man3.png';
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { useUserStore } from '@/stores/user';
 import { useRouter } from 'vue-router'; // Import useRouter
+import { normalizeVideoId } from '@/utils/videoId';
 
 const videoId = ref('');
 const videoIdSearched = ref(''); // 検索実行時のvideoIdを保持
@@ -167,7 +168,14 @@ const searchReports = async () => {
   searchAttempted.value = true;
   searchError.value = ''; // Clear previous errors
   reports.value = []; // Clear previous results
-  videoIdSearched.value = videoId.value.trim();
+  // 動画IDを正規化(投稿時と同じルール。表記ゆれでもヒットさせる。C-1)
+  videoIdSearched.value = normalizeVideoId(videoId.value);
+
+  if (!videoIdSearched.value) {
+    searchError.value = '動画IDを入力してください。';
+    isLoading.value = false;
+    return;
+  }
 
   try {
     const q = query(collection(db, 'posts'), where('videoId', '==', videoIdSearched.value));

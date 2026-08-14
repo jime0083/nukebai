@@ -161,10 +161,13 @@ Work 3-1: videoId 正規化ユーティリティ (C-1) 【完了 2026-08-14】
   [x] 単体テスト src/utils/videoId.test.mjs を作成し node 実行(18件 全pass)
       ※Phase 6 で Vitest 基盤へ統合予定
 
-Work 3-2: 正規化の全経路適用 (C-1)
-  [ ] ReviewForm.vue の投稿時に normalizeVideoId を適用
-  [ ] Search.vue の検索時に normalizeVideoId を適用
-  [ ] stores/reviews.js の重複チェッククエリにも適用
+Work 3-2: 正規化の全経路適用 (C-1) 【完了 2026-08-14】
+  [x] stores/reviews.js submitReview() で投稿時に normalizeVideoId を適用
+      (保存する videoId と重複チェッククエリの両方を正規化。データ層で一元化)
+  [x] Search.vue の検索時に normalizeVideoId を適用(空なら入力促す)
+  [x] Search.vue の未使用 import(doc/updateDoc/increment)を除去
+  ※ReviewForm.vue は videoId を submitReview に渡すだけで、正規化はデータ層で
+    一括実施するため個別対応不要(拡張側は Work 2-5 で実装済み)
 
 Work 3-3: 理由マスタの一本化 (C-2)
   [ ] Search.vue の reasonDisplayMap を削除し、stores/reasons.js の
