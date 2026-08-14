@@ -25,7 +25,7 @@
     * src/views/ReviewDetails.vue:64
     * src/components/reviews/ReviewCard.vue:43
   - 影響: レビュー詳細ページ表示時に実行時エラー。アップグレード案内が機能しない
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Phase1 Work1-1)
 
 [A-2] functions/index.js の STRIPE_KEY が未定義
   - 内容: validateCouponV3 内 line 34 で require("stripe")(STRIPE_KEY) しているが
@@ -129,7 +129,7 @@
     終了済みキャンペーンページ。Home.vue に大量のコメントアウト済みバナー
   - 影響: デッドコードによる可読性低下・誤動作リスク
   - 決定(2026-08-14): ページ削除・関連表記全削除で承認済み
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Phase1 Work1-3)
 
 [D-2] 表示文言と実装の矛盾
   - 内容: Home「今なら最大3回まで無料」/ Search「アカウント作成で さらに2回」だが
@@ -168,12 +168,12 @@
     test-coupon.html、test-coupon-v2.html、cascade_test_file.txt、
     deploy-log.txt、deploy_debug.log、pglite-debug.log、
     assets/images/スクリーンショット (29).png 等
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Phase1 Work1-2)
 
 [E-2] console.log が本番コードに大量残存
   - 内容: Subscription.vue、Search.vue、functions/ 等ほぼ全域。
     グローバルルール(No console.log in commits)違反
-  - ステータス: 未着手
+  - ステータス: 一部解決(src側は2026-08-14完了。functions側はPhase2/4のファイル削除で解消予定)
 
 [E-3] 巨大ファイル
   - 内容: Home.vue 1411行 / Subscription.vue 1106行 / Campaign.vue 870行 /
