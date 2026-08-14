@@ -1,0 +1,228 @@
+# ヌケバイ progress.txt (2026-08-14 作成)
+# problem.txt を基にタスクを切り出したもの。粒度は Sonnet が単独で実装可能な
+# レベルに分割している(1タスク = 対象ファイルが明確・変更範囲が限定的)。
+#
+# 運用ルール(プロジェクトCLAUDE.md参照):
+# - 1つの Phase が完了したら必ず作業を停止し、ユーザーの指示を待つ
+# - 不明点があれば作業前に必ず質問する
+# - 新しい問題は problem.txt に追記 → 本ファイルにタスク化 → 指示を待って着手
+#
+# ステータス: [ ] 未着手 / [~] 作業中 / [x] 完了
+
+=====================================================================
+Phase 1: 壊れているコードの修正とデッドコード削除 (problem: A-1, D-1, E-1, E-2)
+=====================================================================
+目的: まず動かない箇所と不要物を無くし、以降の作業の土台を作る
+
+Work 1-1: 存在しないストア参照の修正 (A-1)
+  [ ] Home.vue の showUpgradePrompt / incrementUsage から
+      freeUsageCount / incrementFreeUsage 参照を削除(未使用の検索UIコードごと整理)
+  [ ] ReviewDetails.vue:64 の userStore.incrementFreeUsage() 呼び出しを削除
+  [ ] ReviewCard.vue:43 の freeUsageCount 参照を現行仕様
+      (未ログイン=anonymousSearchCount)に合わせて修正
+  [ ] stores/user.js の未使用定数 MAX_LOGGED_IN_FREE_SEARCHES /
+      MAX_PRERELEASE_SEARCHES / isPrereleaseCampaignPeriod を削除
+
+Work 1-2: 不要ファイルの削除 (E-1)
+  [ ] src/components/HelloWorld.vue を削除
+  [ ] src/views/Profile.vue を削除(UserProfile.vue と重複・ルート未登録を確認の上)
+  [ ] test-coupon.html / test-coupon-v2.html / cascade_test_file.txt を削除
+  [ ] deploy-log.txt / deploy_debug.log / pglite-debug.log を削除し .gitignore に
+      *.log を追加
+  [ ] assets/images/スクリーンショット (29).png と未参照画像を調査して削除
+
+Work 1-3: 終了済みキャンペーンコードの削除 (D-1) ※2026-08-14 承認済み
+  [ ] router/index.js の isPrereleaseCampaignPeriod() と Campaign / Prerelease
+      ルートを削除
+  [ ] src/views/Campaign.vue / Prerelease.vue を削除
+  [ ] Home.vue のコメントアウト済みキャンペーンバナー(39-104行)と関連CSSを削除
+  [ ] 全ファイルを「キャンペーン/プレリリース/campaign/prerelease」で全文検索し、
+      終了済みキャンペーンにまつわる表記・リンク・画像参照を全て削除
+      (TheHeader.vue のコメントアウト済みリンク等を含む)
+
+Work 1-4: console.log の除去 (E-2)
+  [ ] src/ 配下の console.log / console.warn を削除(console.error はエラー
+      ハンドリング内のみ許可)
+  [ ] functions/ 配下の デバッグ用 console.log を削除(運用ログは logger に置換)
+
+Phase 1 完了条件: npm run build が通り、全ページが表示エラーなく動作すること
+→ 完了したら停止してユーザーの指示を待つ
+
+=====================================================================
+Phase 2: セキュリティ基盤 (problem: B-1, B-2, B-5)
+=====================================================================
+目的: Firestoreルールを整備し、ポイント付与をサーバー側に移す
+
+Work 2-1: 現状のFirestoreルール確認 ※ユーザーと一緒に実施
+  [ ] Firebaseコンソールで現在のルールを確認し、内容を problem.txt に記録
+      (ユーザーにコンソール確認を依頼 or firebase CLI で取得)
+
+Work 2-2: firestore.rules の新規作成 (B-1)
+  [ ] firestore.rules を作成: posts(read公開/createは auth必須+authorId一致+
+      スキーマ検証/update・delete本人のみ)、users(本人のみ・points等の保護
+      フィールドは書込不可)、products・prices(readのみ)、customers(client書込禁止)
+  [ ] firebase.json に firestore.rules を登録
+  [ ] エミュレータでルールの単体テストを作成(@firebase/rules-unit-testing)
+
+Work 2-3: ポイント付与のサーバー移行 (B-2)
+  [ ] functions に posts onCreate トリガー関数 awardPointsOnPost を実装
+      (15-25ptランダム付与 + reportCount/totalPosts インクリメント)
+  [ ] stores/reviews.js submitReview() から users への updateDoc を削除し、
+      付与結果は users doc の onSnapshot(または再取得)で反映する形に変更
+  [ ] ReviewForm の成功メッセージを「ポイント付与されました」(具体値はサーバー
+      確定後に表示 or 固定文言)に調整
+
+Work 2-4: functions の秘密情報整理 (B-5, A-2)
+  [ ] functions/index.js の validateCouponV3 を削除(課金凍結決定・Stripe利用
+      不可のため。STRIPE_KEY 未定義問題もこれで解消)
+
+Work 2-5: Chrome拡張の認証実装 (B-4) ※2026-08-14 継続方針決定
+  ※重要: Work 2-2 のルールをデプロイすると未認証投稿が塞がれ現行拡張が
+    動かなくなるため、本Workをルールデプロイと同一Phase内で完了させること
+  [ ] popup.html / popup.js にメール/パスワードログインフォームを追加
+      (firebase-auth の gstatic CDN モジュールを使用、manifest.json の CSP 更新)
+  [ ] ログイン状態の保持と表示(ログイン済みなら報告フォーム、未ログインなら
+      ログインフォームを表示。Webの /register への誘導リンクも設置)
+  [ ] 投稿データに authorId(auth.uid)と source: 'extension' を付与
+  [ ] 拡張からの投稿が Work 2-2 のルールを通過することをエミュレータで確認
+
+Phase 2 完了条件: ルールデプロイ後も既存機能(投稿・検索・ログイン)と
+Chrome拡張からの報告が動作し、クライアントから users.points を直接
+書き換えられないこと
+→ 完了したら停止してユーザーの指示を待つ
+
+=====================================================================
+Phase 3: データ整合性 (problem: C-1, C-2, C-3)
+=====================================================================
+目的: videoId 正規化と理由マスタ一本化で検索ヒット率を保証する
+
+Work 3-1: videoId 正規化ユーティリティ (C-1)
+  [ ] src/utils/videoId.js を新規作成: normalizeVideoId(input) を実装
+      (全角→半角 / 大文字化 / trim / 「ABCD123」「ABCD 123」→「ABCD-123」統一)
+  [ ] normalizeVideoId の単体テストを作成(全角・小文字・ハイフン無し・空白入り等)
+
+Work 3-2: 正規化の全経路適用 (C-1)
+  [ ] ReviewForm.vue の投稿時に normalizeVideoId を適用
+  [ ] Search.vue の検索時に normalizeVideoId を適用
+  [ ] stores/reviews.js の重複チェッククエリにも適用
+
+Work 3-3: 理由マスタの一本化 (C-2)
+  [ ] Search.vue の reasonDisplayMap を削除し、stores/reasons.js の
+      getReasonsByCode / getAllReasons から表示名を引くよう変更
+  [ ] BAD_CAMERA を含む全コードが検索結果内訳に表示されることを確認
+
+Work 3-4: 既存データのマイグレーション (C-3)
+  ※2026-08-14 条件付き承認済み: 既存情報(報告データ)に影響がないことが条件
+  [ ] posts 全件の videoId を正規化する管理スクリプトを作成(dry-run モード付き、
+      変更対象は videoId フィールドのみ・他フィールドは一切変更しない)
+  [ ] dry-run 結果(変更件数・変更前後の一覧)をユーザーに報告し、報告データが
+      失われないことを確認 → 最終承認後に本実行
+
+Phase 3 完了条件: 表記ゆれのある videoId(大文字小文字・全角等)で投稿→検索が
+一致すること
+→ 完了したら停止してユーザーの指示を待つ
+
+=====================================================================
+Phase 4: 課金まわりの整理 (problem: A-2〜A-5, B-3, D-4)
+※2026-08-14 方針決定: 課金は当面凍結。Stripe関連機能・コードは削除。
+  ただし課金ページは残し「プレミアムプランは近日実装予定」と表示する
+=====================================================================
+
+Work 4-1: Subscription.vue の「近日実装予定」化 (D-4, B-3)
+  [ ] Subscription.vue から Stripe Elements・カード入力・決済処理・
+      クーポン検証・テスト用プランフォールバックを全て削除
+  [ ] ページ本体は残し「プレミアムプランは近日実装予定」の案内表示に置き換える
+      (/subscription ルートは存続)
+  [ ] customers/{uid}/payment_methods, subscriptions へのクライアント書き込み
+      コードを削除 (B-3)
+
+Work 4-2: Stripe関連コードの削除 (A-2)
+  [ ] package.json から @stripe/stripe-js を削除し npm install で lock 更新
+  [ ] functions/package.json から stripe を削除
+      (validateCouponV3 本体の削除は Work 2-4 で実施済みの想定。未実施なら合わせて削除)
+  [ ] Success.vue はサブスク完了ページとして不要になるため、ルートごと削除 or
+      汎用の完了ページとして文言修正(実装時にユーザーへ確認)
+
+Work 4-3: 未完成PayPalコードの削除 (A-4, A-5)
+  ※課金再開時に正規の設計(サーバー経由・Webhook署名検証)で再実装する前提
+  [ ] src/services/paypal.js を削除
+  [ ] functions/paypal.js を削除し、functions/index.js の PayPal export を削除
+
+Work 4-4: ContractManagement.vue の整理 (A-3)
+  [ ] 存在しない Functions 呼び出し(getSubscriptionDetails 等)を全て削除
+  [ ] ページは残し「プレミアムプランは近日実装予定」の案内表示に統一
+      (/contract-management ルートは存続)
+
+Work 4-5: プレミアム導線の文言統一
+  [ ] Home / ReviewDetails 等の「プレミアムに登録」導線は残しつつ、遷移先の
+      /subscription で「近日実装予定」が表示されることを確認
+  [ ] ReviewDetails.vue の premium-prompt 文言を「近日実装予定」前提に調整
+
+Phase 4 完了条件: 決済関連の実行時エラーが0になり、課金ページが
+「プレミアムプランは近日実装予定」表示で正常に閲覧できること
+→ 完了したら停止してユーザーの指示を待つ
+
+=====================================================================
+Phase 5: 仕様乖離の解消とUX改善 (problem: D-2, D-3, D-5, F-1, F-2, E-6)
+=====================================================================
+
+Work 5-1: 年齢確認ゲートの復活 (D-3) ※2026-08-14 承認済み
+  [ ] router.beforeEach に ageVerified チェックを追加(未確認なら
+      /age-verification へリダイレクト、確認後は元のページへ)
+  [ ] AgeVerification.vue の redirect クエリ処理を動作確認・修正
+
+Work 5-2: 文言と実装の整合 (D-2, E-6)
+  [ ] Home.vue の「最大3回まで無料」等を実仕様(未ログイン1回/登録で無制限)に修正
+  [ ] Search.vue の「さらに2回」を「無制限」に修正
+  [ ] サイト名表記を「ヌケバイ」に全ファイルで統一(2026-08-14 決定。
+      NukeBye / NukeBAI / Nukebai 等の英字表記を置換。index.html の
+      title/description も対象)
+
+Work 5-3: ポイントUIの整理 (D-5)
+  [ ] UserProfile.vue の「ポイントを利用する」ボタンと準備中クーポン欄を非表示化
+  [ ] Home.vue のポイント説明文言を「今後利用機能を追加予定」に統一
+
+Work 5-4: 検索・ログインの導線改善 (F-1, F-2)
+  [ ] Search.vue の0件表示に「この動画を報告する」ボタンを追加し、
+      /submit-review へ videoId をクエリで引き継ぐ
+  [ ] ReviewForm.vue でクエリの videoId を初期値に設定
+  [ ] Login.vue に sendPasswordResetEmail によるパスワードリセット導線を追加
+
+Phase 5 完了条件: 文言と実装が一致し、検索→報告→検索の一連の流れが
+スムーズに繋がること
+→ 完了したら停止してユーザーの指示を待つ
+
+=====================================================================
+Phase 6: 品質基盤・リファクタリング (problem: E-3, E-4, E-5, B-4, F-3, F-4)
+=====================================================================
+
+Work 6-1: Lint/テスト基盤 (E-4)
+  [ ] ESLint(eslint-plugin-vue) + Prettier を導入し npm scripts に追加
+  [ ] Vitest を導入し、stores/user.js・stores/reasons.js・utils/videoId.js の
+      単体テストを作成
+  [ ] package.json の name を "nukebai" に変更
+
+Work 6-2: 巨大ファイル分割 (E-3)
+  [ ] Home.vue をセクション別コンポーネント(HeroSection / AboutSection /
+      HowToUseSection / ReportGuideSection / BottomCta)に分割
+  [ ] Subscription.vue のクーポン処理を composable(useCoupon.js)に抽出、
+      カード入力部を StripeCardForm.vue に分割(方針Bの場合のみ)
+
+Work 6-3: 認証フローの整理 (E-5)
+  [ ] App.vue の onAuthStateChanged 処理を composable(useAuthState.js)化し、
+      router/index.js のガードを単一の初期化 Promise 待ちに簡素化
+  [ ] auth と store の不一致時の強制ログインリダイレクトを解消
+
+Work 6-4: Chrome拡張の機能改善 (C-1 関連)
+  ※認証実装は Work 2-5 へ移動済み(2026-08-14 継続方針決定のため)
+  [ ] 拡張の videoId 正規化を Web 側(utils/videoId.js)と同一ロジックに統一
+      (現状の小文字化は Web と逆方向のため必ず修正)
+  [ ] 拡張の報告理由リストを stores/reasons.js のマスタと同期(手動同期で可、
+      同期手順をコメントで明記)
+
+Work 6-5: SEO・表示改善 (F-3, F-4)
+  [ ] @vueuse/head 導入でページ別 title/description を設定、OGP タグ追加
+  [ ] Search.vue の理由内訳を件数降順ソート + 割合バー表示に変更
+
+Phase 6 完了条件: lint / test / build が全て通り、全ファイルが800行以下になること
+→ 完了したら停止してユーザーの指示を待つ
