@@ -1,0 +1,133 @@
+rules_version = '2';
+
+// ヌケバイ Firestore セキュリティルール
+// 2026-08-14 Work 2-2 で本番現行ルール(firestore.rules.production-backup-2026-08-14)を
+// ベースにリポジトリ管理化し、以下のギャップを修正:
+//   - users: points 等の保護フィールドをクライアントから書換不可に(B-2)
+//   - posts: 作成時のスキーマ検証を追加(videoId/reasons/authorId、videoTitleは任意)
+//   - extension_reports: 拡張は posts に統一するため新規 write を禁止(C-4)
+// ※ customers/** の締め付け(B-3)は決済フロー削除(Phase 4)と同時に行う。
+//   本ファイルの customers ルールは現行維持し、Phase 4 で write:false 化する。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------- ヘルパー -------
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // users の保護フィールド(クライアントから書換不可。Cloud Functions/Admin SDK のみ)
+    function protectedUserFieldsUnchanged() {
+      let prev = resource.data;
+      let next = request.resource.data;
+      return next.points == prev.points
+        && next.reportCount == prev.reportCount
+        && next.totalPosts == prev.totalPosts
+        && next.searchCount == prev.searchCount
+        && next.role == prev.role
+        && next.subscriptionStatus == prev.subscriptionStatus
+        && next.isUnlimited == prev.isUnlimited;
+    }
+
+    // 新規 users ドキュメントは保護フィールドを安全な初期値でのみ作成可
+    function newUserFieldsSafe() {
+      let d = request.resource.data;
+      return (!('points' in d) || d.points == 0)
+        && (!('reportCount' in d) || d.reportCount == 0)
+        && (!('totalPosts' in d) || d.totalPosts == 0)
+        && (!('searchCount' in d) || d.searchCount == 0)
+        && (!('role' in d) || d.role == 'user')
+        && (!('subscriptionStatus' in d) || d.subscriptionStatus == 'free')
+        && (!('isUnlimited' in d) || d.isUnlimited == false);
+    }
+
+    // posts 作成時のスキーマ検証
+    function isValidNewPost() {
+      let d = request.resource.data;
+      return d.authorId == request.auth.uid
+        && d.videoId is string
+        && d.videoId.size() > 0
+        && d.videoId.size() <= 50
+        && d.reasons is list
+        && d.reasons.size() <= 30
+        && (!('videoTitle' in d) || (d.videoTitle is string && d.videoTitle.size() <= 200));
+    }
+
+    // ------- posts(報告) -------
+    // 読み取りは認証必須(検索はログイン必須の方針: D-6)
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidNewPost();
+      // 更新・削除は作成者のみ
+      allow update, delete: if isAuthenticated()
+        && resource.data.authorId == request.auth.uid;
+    }
+
+    // ------- users(プロフィール) -------
+    match /users/{userId} {
+      allow read: if isUser(userId);
+      // 作成: 本人のみ、保護フィールドは安全な初期値のみ
+      allow create: if isUser(userId) && newUserFieldsSafe();
+      // 更新: 本人のみ、保護フィールドは変更不可(ポイント等は Functions のみ)
+      allow update: if isUser(userId) && protectedUserFieldsUnchanged();
+      // 削除は禁止(アカウント削除は Cloud Functions で管理)
+      allow delete: if false;
+    }
+
+    // ------- extension_reports(旧・拡張専用) -------
+    // 拡張は posts に統一するため新規 write は禁止。既存データの本人読取のみ許可。
+    match /extension_reports/{reportId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ------- 商品・価格(決済。当面凍結だが読み取りは維持) -------
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    match /products/{productId}/prices/{priceId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ------- 顧客・サブスク(決済) -------
+    // TODO(Phase 4): 決済凍結・クライアント直書き削除に合わせて write:false へ締める(B-3)
+    match /customers/{userId} {
+      allow read, write: if isUser(userId);
+
+      match /payment_methods/{paymentId} {
+        allow read, write: if isUser(userId);
+      }
+      match /subscriptions/{subscriptionId} {
+        allow read, write: if isUser(userId);
+      }
+      match /checkout_sessions/{sessionId} {
+        allow read, write: if isUser(userId);
+      }
+      match /payments/{paymentId} {
+        allow read: if isUser(userId);
+        allow write: if false;
+      }
+      match /subscription_cancellations/{cancellationId} {
+        allow read: if isUser(userId);
+        allow write: if false;
+      }
+    }
+
+    match /subscription_logs/{logId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow write: if false;
+    }
+
+    // ------- デフォルト全拒否 -------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

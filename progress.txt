@@ -72,20 +72,24 @@ Work 2-1: 現状のFirestoreルール確認 【完了 2026-08-14】
     Q-b (D-6) → 検索はログイン必須。posts read は認証必須のまま維持し、
                 未ログイン検索UI・匿名カウントは撤去(実装は Phase 5 Work 5-2 に統合)
 
-Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) ※Q-a/Q-b 決定済み
-  [ ] 現行 backup をベースに firestore.rules を作成し、以下を反映:
-      - users: points / reportCount / totalPosts / role / subscriptionStatus 等の
-        保護フィールドをクライアント更新不可に(Functionsのみ)。B-2 対応
-      - customers/**(subscriptions等): クライアント write を禁止に。B-3 対応
-      - posts: create/update のスキーマ検証(videoId必須・文字列、reasonsコード配列、
-        videoTitle は任意だが有れば文字列+上限、authorId==uid)を追加。Q-a反映
+Work 2-2: firestore.rules のリポジトリ管理化+ギャップ修正 (B-1) 【実装完了 2026-08-14】
+  [x] firestore.rules を作成:
+      - users: points/reportCount/totalPosts/searchCount/role/subscriptionStatus/
+        isUnlimited をクライアント更新不可(protectedUserFieldsUnchanged)。B-2対応
+      - users create: 保護フィールドは安全な初期値のみ(newUserFieldsSafe)
+      - posts create: スキーマ検証(authorId==uid / videoId必須文字列≤50 /
+        reasons is list≤30 / videoTitle 任意・文字列≤200)。Q-a反映
       - posts read: 認証必須のまま維持(Q-b=検索ログイン必須)
-      - extension_reports: 拡張は posts に統一するため新規書込は不要。
-        既存データ読取用に read ルールは残す(write は塞ぐ方向で検討)
-  [ ] firebase.json に firestore ルール設定を登録
-  [ ] エミュレータでルールの単体テストを作成(@firebase/rules-unit-testing)
-  ※デプロイは Work 2-3(ポイントのサーバー化)と 2-5(拡張認証)完了後に一括で行う
-    (先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)。
+      - extension_reports: 新規 write 禁止(posts へ統一)。既存本人 read のみ
+      - customers/**: 現行維持。TODO(Phase 4)で decップ削除と同時に write:false 化(B-3)
+  [x] firebase.json に firestore ルール設定を登録
+  [x] Rules REST API でルール構文を検証(HTTP200・本番未release=影響なし。
+      検証用rulesetは削除済み)
+  [~] 単体テスト firestore-tests/firestore.rules.test.mjs を作成。
+      ただし当環境に Java ランタイムが無くエミュレータ実行不可のため、
+      実行検証は Phase 6 Work 6-1(テスト基盤整備)または Java 環境に委ねる
+  ※未デプロイ: 本番反映は Work 2-3(ポイントのサーバー化)と 2-5(拡張認証)完了後に
+    一括で行う(先にルールだけ厳格化すると投稿ポイント付与や拡張が壊れるため)。
     デプロイ前にユーザーへ影響範囲を報告する(ルール4の注意事項)
 
 Work 2-3: ポイント付与のサーバー移行 (B-2)
