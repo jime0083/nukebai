@@ -125,35 +125,13 @@ const navigateToSearchPage = () => {
       <!-- ボタン削除 -->
       
     </div>
-    <!-- ユーザーの状態に合わせた固定ボタン -->
+    <!-- プレリリースキャンペーン用の固定ボタン -->
     <div class="fixed-bottom-button-container">
-      <!-- 未ログインで無料枠が残っている場合 -->
-      <div v-if="!userStore.isLoggedIn && userStore.anonymousSearchCount < 1" class="button-container">
-        <router-link 
-          to="/search" 
-          class="fixed-bottom-try-free-button"
-        >
-          とりあえず無料で使ってみる
-        </router-link>
-        <p class="disclaimer-text">※未ログイン時は見られる情報に制限がかかります</p>
-      </div>
-      
-      <!-- 未ログインで無料枠を既に使用した場合 -->
       <router-link 
-        v-else-if="!userStore.isLoggedIn && userStore.anonymousSearchCount >= 1" 
-        to="/login" 
+        to="/prerelease" 
         class="fixed-bottom-try-free-button"
       >
-        今だけログインすればもう2回無料！
-      </router-link>
-      
-      <!-- ログイン済みで非課金ユーザーの場合 -->
-      <router-link 
-        v-else-if="userStore.isLoggedIn && !userStore.isPaidUser" 
-        to="/subscription" 
-        class="fixed-bottom-try-free-button"
-      >
-        プレミアム会員になる
+        プレリリースキャンペーンの詳細はこちら
       </router-link>
     </div>
   </div>

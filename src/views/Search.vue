@@ -1,10 +1,10 @@
 <template>
   <div class="search-page">
     <div class="container">
-      <h1>動画IDで報告を検索</h1>
+      <h1>動画IDを入力してヌけない動画の情報を検索</h1>
 
       <div class="search-form">
-        <input type="text" v-model="videoId" placeholder="動画IDを入力してください" @keyup.enter="searchReports" class="search-input" :readonly="isLoading || !userStore.canPerformSearch" />
+        <input type="text" v-model="videoId" placeholder="例:AAAA-123" @keyup.enter="searchReports" class="search-input" :readonly="isLoading || !userStore.canPerformSearch" />
         <button @click="searchReports" :disabled="isLoading || !userStore.canPerformSearch" class="search-button">
           <span>検索</span>
         </button>
@@ -15,11 +15,6 @@
         <p class="disclaimer-text">※未ログイン時は見られる情報に制限がかかります</p>
       </div>
 
-      <!-- Prompt for logged-in free user (below search form) -->
-      <div v-if="showLoggedInFreeLimitReachedPrompt" class="logged-in-limit-prompt form-adjacent-prompt">
-        <p class="limit-text">すでに無料枠を使用しています。</p>
-        <button @click="goToSubscriptionPage" class="subscribe-button-promo">サブスクリプションを利用</button>
-      </div>
 
       <div v-if="isLoading" class="loading-indicator">
         <p>検索しています...</p>
@@ -76,11 +71,6 @@
             </div>
           </div>
 
-          <!-- Message for logged-in free user who has used free search (sibling to result wrappers, inside search-results-container) -->
-          <div v-if="showLoggedInFreeLimitReachedPrompt" class="logged-in-limit-prompt">
-            <p class="limit-text">すでに無料枠を使用しています。</p>
-            <button @click="goToSubscriptionPage" class="subscribe-button-promo">サブスクリプションを利用</button>
-          </div>
 
         </div>
       </transition>
@@ -118,7 +108,6 @@ const userStore = useUserStore();
 const router = useRouter(); // Initialize router
 
 const showFreeLimitReachedMessage = computed(() => !userStore.isLoggedIn && !userStore.canPerformSearch);
-const showLoggedInFreeLimitReachedPrompt = computed(() => userStore.isLoggedIn && !userStore.isPaidUser && !userStore.isAdmin && !userStore.canPerformSearch);
 
 const reasonDisplayMap = {
   // 外見・身体的特徴
@@ -150,24 +139,12 @@ const goToLogin = () => {
   router.push({ name: 'Login', query: { redirect: '/search', reason: 'promo_login_mosaic' } });
 };
 
-const goToSubscriptionPage = () => {
-  router.push({ name: 'Subscription' });
-};
 
 const searchReports = async () => {
   // 1. Check permission to search
   if (!userStore.canPerformSearch) {
     // For unauthenticated users, 'showFreeLimitReachedMessage' (computed) handles the prompt.
-    // For logged-in free users, 'showLoggedInFreeLimitReachedPrompt' (computed) handles the prompt.
     // The search button/input will be disabled by 'isSearchDisabled' if canPerformSearch is false.
-    // Thus, we only need a fallback error for other logged-in states if canPerformSearch is false.
-    if (userStore.isLoggedIn && (userStore.isPaidUser || userStore.isAdmin)) { // e.g., admin/paid but somehow can't search
-      searchError.value = '検索を実行できません。'; 
-    }
-    // No specific searchError is set here for !isLoggedIn or logged-in free users hitting limit,
-    // as dedicated computed prompts handle these UI states.
-    // If !userStore.isLoggedIn, the computed showFreeLimitReachedMessage will be true, displaying the prompt.
-    // No specific searchError is set here for that case, relying on the dedicated prompt.
     isLoading.value = false;
     searchAttempted.value = true; // To display the error
     reports.value = []; // Clear previous results
@@ -208,19 +185,8 @@ const searchReports = async () => {
     // 2. Increment search count AFTER successful search execution
     if (!userStore.isLoggedIn) {
       userStore.incrementAnonymousSearchCount();
-    } else if (userStore.isLoggedIn && !userStore.isPaidUser && !userStore.isAdmin) {
-      // For logged-in free users
-      try {
-        userStore.incrementSearchCount(); // Increment in Pinia store
-        const userDocRef = doc(db, 'users', userStore.user.uid);
-        await updateDoc(userDocRef, {
-          searchCount: increment(1) // Use Firestore's atomic increment
-        });
-      } catch (e) {
-        console.error('Failed to update search count in Firestore:', e);
-        // Optionally notify user or log. Local store count is already incremented.
-      }
     }
+    // Logged-in users have unlimited searches, no need to track count
   } catch (error) {
     console.error('Error searching reports:', error);
     searchError.value = '検索中にエラーが発生しました。もう一度お試しください。';
@@ -471,32 +437,6 @@ const reasonCounts = computed(() => {
 
 /* Button style is already defined by .login-button-promo */
 
-.logged-in-limit-prompt, .form-adjacent-prompt {
-  margin-top: var(--space-lg);
-  margin-bottom: var(--space-lg);
-  padding: var(--space-lg);
-  background-color: var(--color-surface); /* Or a slightly different background */
-  border: 1px solid var(--color-error);
-  border-radius: var(--border-radius-md);
-  text-align: center;
-}
-
-/* .limit-text style is already defined and can be reused if class is applied */
-
-.subscribe-button-promo {
-  padding: var(--space-sm) var(--space-lg);
-  background-color: var(--color-error); /* Red color */
-  color: var(--color-on-error);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-
-.subscribe-button-promo:hover {
-  background-color: var(--color-error-dark);
-}
 
 .disclaimer-container {
   margin-top: 0.5rem;

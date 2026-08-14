@@ -29,7 +29,8 @@ export const useReasonsStore = defineStore('reasons', () => {
       reasons: [
         { code: 'FAKE_CUM', displayName: '偽汁(疑似精子)' },
         { code: 'BAD_QUALITY', displayName: '画質・音声が悪い' },
-        { code: 'STUDIO_LIKE', displayName: '撮影場所がスタジオ過ぎる' }
+        { code: 'STUDIO_LIKE', displayName: '撮影場所がスタジオ過ぎる' },
+        { code: 'BAD_CAMERA', displayName: 'カメラワークが悪い' }
       ]
     },
     {

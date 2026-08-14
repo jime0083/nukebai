@@ -15,7 +15,7 @@
           type="text" 
           id="videoId" 
           v-model="videoId" 
-          placeholder="例: ABC-123" 
+          placeholder="例: AAAA-123" 
           required
         />
       </div>
@@ -62,8 +62,8 @@
       
       <div class="form-actions">
         <button type="submit" class="primary" :disabled="submitting">
-          <span v-if="submitting">投稿中...</span>
-          <span v-else>レビューを投稿</span>
+          <span v-if="submitting">報告中...</span>
+          <span v-else>報告</span>
         </button>
       </div>
     </form>

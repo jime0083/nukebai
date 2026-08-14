@@ -23,11 +23,9 @@
         <div class="about-nukebai-content-wrapper">
           <div class="about-content-left">
             <h2 class="section-title">ヌケバイってなに？</h2>
-            <div class="about-text-column">
-              <p>週3回オナニーをする男性が見るアダルト動画の本数は約5.7本といわれています。</p>
-              <p>つまり、2.7本ヌけないアダルト動画を見ていて、それが1本1000円だったとすると週に2700円、1本の動画を50分見ているとすると週に2.25時間浪費していることになります。</p>
-              <p>ヌケバイは月アダルト動画1本分(1000円)でヌけないアダルト動画を見て浪費する時間とお金をなくすサービスです。</p>
-              <p>アダルト動画を見るのにかける時間やお金のムダを省き人生の幸福度を高めませんか？</p>
+            <div class="about-text-column increased-spacing">
+              <p class="normal-text">週3回オナニーする人は、毎週平均2.7本ヌけない動画を見て<br><br><span class="highlight-red large-text bold-text animate-bg" ref="wasteText">2,700円と2.25時間をムダ</span><span class="normal-text">にしています。</span></p>
+              <p class="normal-text">ヌケバイは、その時間とお金のムダをなくすサービスです。</p>
             </div>
           </div>
           <div class="about-content-right">
@@ -36,8 +34,43 @@
         </div>
       </section>
 
+
+            <!-- プレリリースバナー -->
+            <!-- <div class="campaign-banner">
+        <div class="container">
+          <div class="campaign-title-container">
+            <h2 class="title-large">ヌケバイ</h2>
+            <div class="title-right-container">
+              <p class="title-small">プレリリース記念！</p>
+              <h3 class="title-medium">キャンペーン</h3>
+            </div>
+          </div>
+          <div class="campaign-content-wrapper">
+            <div class="campaign-timer">
+              <div class="campaign-period-box-bordered">
+                <span class="campaign-period-text">キャンペーン期間</span>
+              </div>
+              <div class="campaign-date-row">
+                <p class="campaign-date">
+                  <span class="all-white">2025年</span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">19</span><span class="all-white">日 ～ </span><span class="large-number">7</span><span class="all-white">月</span><span class="large-number">31</span><span class="all-white">日</span>
+                </p>
+              </div>
+              <router-link :to="{path: '/prerelease', hash: '#top'}" class="campaign-detail-button">
+                プレリリース詳細をチェック
+              </router-link>
+            </div>
+            <div class="discount-display">
+              <span class="discount-before">1000</span>
+              <span class="discount-before"></span>
+              <span class="discount-after">500</span>
+              <span class="discount-currency">円</span>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
       <!-- キャンペーンバナー -->
-      <div class="campaign-banner">
+      <!-- <div class="campaign-banner">
         <div class="container">
           <div class="campaign-title-container">
             <h2 class="title-large">三大特典</h2>
@@ -46,22 +79,34 @@
               <h3 class="title-medium">キャンペーン</h3>
             </div>
           </div>
-          <div class="campaign-timer">
-            <div class="campaign-period-box-bordered">
-              <span class="campaign-period-text">キャンペーン期間</span>
+          <div class="campaign-content-wrapper">
+            <div class="campaign-timer">
+              <div class="campaign-period-box-bordered">
+                <span class="campaign-period-text">キャンペーン期間</span>
+              </div>
+              <div class="campaign-date-row">
+                <p class="campaign-date">
+                  <span class="all-white">2025年</span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">15</span><span class="all-white">日 ～ </span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">30</span><span class="all-white">日</span>
+                </p>
+              </div>
+              <router-link :to="{path: '/campaign', hash: '#top'}" class="campaign-detail-button">
+                キャンペーンページ詳細をチェック
+              </router-link>
             </div>
-            <div class="campaign-date-row">
-              <p class="campaign-date">
-                <span class="all-white">2025年</span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">15</span><span class="all-white">日 ～ </span><span class="large-number">6</span><span class="all-white">月</span><span class="large-number">30</span><span class="all-white">日</span>
-              </p>
+            <div class="discount-display">
+              <span class="discount-before">1000</span>
+              <span class="discount-before"></span>
+              <span class="discount-after">500</span>
+              <span class="discount-currency">円</span>
             </div>
-            <router-link :to="{path: '/campaign', hash: '#top'}" class="campaign-detail-button">
-              キャンペーンページ詳細をチェック
-            </router-link>
           </div>
         </div>
-      </div>
+      </div> -->
 
+
+
+
+      <!-- 使い方セクション -->
       <section class="how-to-use-section">
         <h2 class="section-title">ヌケバイの使い方</h2>
         <div class="how-to-use-grid">
@@ -98,58 +143,37 @@
         <div class="how-to-use-grid">
           <div class="how-to-use-card">
             <img :src="reportImage1" alt="使い方1：動画を検索">
-            <h3>ステップ1：動画を検索</h3>
-            <p>気になるアダルト動画のIDやタイトルで検索し、他のユーザーのレビューを確認して「ヌけない」動画を事前に見分けます。</p>
+            <h3>ステップ1：ヌけない動画を見たら...</h3>
+            <p>ヌけない動画を見たら、右上の「報告」をクリックしヌけない動画の情報をポイントに変換しましょう</p>
           </div>
           <div class="how-to-use-card">
             <img :src="reportImage2" alt="使い方2：レビューを投稿">
-            <h3>ステップ2：レビューを投稿</h3>
-            <p>視聴した動画の「ヌけた」「ヌけなかった」体験を具体的にレビューとして投稿し、コミュニティに貢献。ポイントも獲得できます。</p>
+            <h3>ステップ2：ヌけない動画を報告</h3>
+            <p>ヌけなかった動画のIDと共になぜヌけなかったのか理由を選択して「報告」ボタンをクリック！</p>
           </div>
           <div class="how-to-use-card">
             <img :src="reportImage3" alt="使い方3：賢く視聴">
-            <h3>ステップ3：賢く視聴</h3>
-            <p>集まったレビュー情報を活用し、本当に楽しめる作品だけを選んで視聴。貴重な時間とお金の浪費を防ぎます。</p>
+            <h3>ステップ3：ポイント獲得</h3>
+            <p>報告後すぐにポイントが付与されます。このポイントを利用すれば翌月のサブスク利用料を割引できます</p>
+            <p>※ポイント利用機能は近日実装予定</p>
           </div>
         </div>
       </section>
     </div>
-    <div class="fixed-bottom-cta-container" v-if="shouldShowBottomCta">
-      <!-- 未ログインで無料枠を使用していない場合 -->
-      <div v-if="!userStore.isLoggedIn && userStore.anonymousSearchCount < 1" class="button-container">
-        <router-link 
-          to="/search" 
-          class="fixed-bottom-try-free-button"
-          @click="incrementAnonymousUsage"
-        >
-          とりあえず無料で使ってみる
-        </router-link>
-        <p class="disclaimer-text">※未ログイン時は見られる情報に制限がかかります</p>
-      </div>
-      
-      <!-- 未ログインで無料枠を既に使用した場合 -->
+    <div class="fixed-bottom-cta-container">
+      <!-- 無料で使ってみるボタン -->
       <router-link 
-        v-else-if="!userStore.isLoggedIn && userStore.anonymousSearchCount >= 1" 
         to="/login" 
         class="fixed-bottom-try-free-button"
       >
-        今だけログインすればもう2回無料！
-      </router-link>
-      
-      <!-- ログイン済みで非課金ユーザーの場合 -->
-      <router-link 
-        v-else-if="userStore.isLoggedIn && !userStore.isPaidUser" 
-        to="/subscription" 
-        class="fixed-bottom-try-free-button"
-      >
-        プレミアム会員になる
+        無料で使ってみる
       </router-link>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
@@ -171,9 +195,39 @@ const searchResults = ref([])
 const isSearching = ref(false)
 const searchError = ref(null)
 
+// References for the animated elements
+const wasteText = ref(null)
+const priceText = ref(null)
+
 onMounted(async () => {
   await reviewsStore.fetchReviews()
+  
+  // Setup intersection observer after DOM is updated
+  nextTick(() => {
+    setupAnimationObserver()
+  })
 })
+
+// Setup intersection observer for animations
+function setupAnimationObserver() {
+  const options = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.5
+  }
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-bg-active')
+      }
+    })
+  }, options)
+  
+  // Observe the elements with animation
+  if (wasteText.value) observer.observe(wasteText.value)
+  if (priceText.value) observer.observe(priceText.value)
+}
 
 const reviews = computed(() => {
   return reviewsStore.reviews
@@ -187,11 +241,11 @@ const showUpgradePrompt = computed(() => {
   return userStore.user && userStore.subscriptionStatus === 'free' && userStore.freeUsageCount >= 2
 })
 
-// 下部CTAボタンを表示すべきか
-const shouldShowBottomCta = computed(() => {
-  // 課金ユーザーや管理者の場合は表示しない
-  return !userStore.isPaidUser && !userStore.isAdmin
-})
+// プレリリース期間中は常に表示する
+// const shouldShowBottomCta = computed(() => {
+//   // 課金ユーザーや管理者の場合は表示しない
+//   return !userStore.isPaidUser && !userStore.isAdmin
+// })
 
 function incrementUsage() {
   if (userStore.user && userStore.subscriptionStatus === 'free') {
@@ -277,12 +331,23 @@ async function searchVideo() {
   margin-bottom: var(--space-lg);
   color: white;
   text-align: left;
+  font-weight: bold;
 }
 
 .hero-content h1.main-catchphrase .highlight-red {
   color: #FF4D4D; /* A bright red color */
   font-size: 4rem; /* Slightly larger than the surrounding text */
   font-weight: bolder;
+}
+
+@media (max-width: 768px) {
+  .hero-content h1.main-catchphrase .highlight-red {
+    font-size: 2rem;
+  }
+  
+  .hero-content h1.main-catchphrase {
+    font-size: 1.3rem;
+  }
 }
 
 h1 {
@@ -677,10 +742,10 @@ h2:after {
 /* Campaign Banner Styles */
 .campaign-banner {
   width: 100vw;
-  margin-bottom: var(--space-xl);
   padding: var(--space-xl) 0;
   padding-top: 50px;
-  margin-top: 0;
+  margin-top: 0 !important;
+  margin-bottom: 20px !important;
   position: relative;
   background-color: var(--color-background);
   background-image: url('../assets/images/pos-man10.png');
@@ -768,14 +833,13 @@ h2:after {
 }
 
 .campaign-timer {
-  margin-top: var(--space-md);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-bottom: 20px;
 }
 
 .campaign-period-box-bordered {
-  margin-top: 20px;
   border: 2px solid var(--color-primary);
   padding: 5px 20px;
   border-radius: 0; /* 角を丸くしない */
@@ -793,14 +857,45 @@ h2:after {
 .campaign-detail-button {
   background-color: var(--color-primary);
   color: white;
-  text-decoration: none;
-  padding: 8px 15px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+  padding: 10px 20px;
   margin-top: 20px;
+}
+
+.campaign-content-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-start;
+  margin-top: var(--space-md);
+  width: 100%;
+}
+
+.discount-display {
+  font-weight: bold;
+  display: flex;
+  align-items: baseline;
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-md);
+  margin-left: var(--space-xs);
+  position: relative;
+  z-index: 2;
+}
+
+.discount-before {
+  color: white;
+  font-size: 1.8rem;
+  text-decoration: line-through;
+}
+
+.discount-after {
+  color: red;
+  font-size: calc(3.5rem + 2vw);
+  font-weight: 900;
+}
+
+.discount-currency {
+  color: white;
+  font-size: 1.8rem;
 }
 
 .campaign-detail-button:hover {
@@ -822,6 +917,8 @@ h2:after {
   margin: 0;
   display: flex;
   align-items: baseline;
+  flex-wrap: nowrap; /* Prevent wrapping */
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .all-white {
@@ -864,11 +961,23 @@ h2:after {
 }
 
 @media (max-width: 768px) {
+  .campaign-content-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .discount-display {
+    margin-left: 0;
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+  
   .campaign-title-container {
     flex-direction: column;
     align-items: center;
     width: 100%;
     text-align: center;
+    margin-left: 0;
   }
   
   .title-right-container {
@@ -909,6 +1018,10 @@ h2:after {
   .campaign-date {
     font-size: 1.5rem;
     text-align: center;
+    flex-direction: row; /* Keep horizontal layout */
+    flex-wrap: nowrap; /* Prevent wrapping */
+    white-space: nowrap; /* Prevent text wrapping */
+    justify-content: center;
   }
   
   .large-number {
@@ -923,6 +1036,23 @@ h2:after {
 }
 
 @media (max-width: 576px) {
+  .campaign-content-wrapper {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .campaign-timer {
+    width: 100%;
+  }
+  
+  .discount-display {
+    margin: var(--space-md) 0;
+    padding: var(--space-sm) var(--space-md);
+    justify-content: center;
+    width: 80%;
+  }
+  
   .title-large {
     font-size: calc(3rem + 1vw);
     border-bottom: none;
@@ -990,8 +1120,10 @@ h2:after {
   
   .campaign-date {
     font-size: 1.1rem;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row; /* Keep horizontal layout */
+    align-items: baseline;
+    justify-content: center;
+    white-space: nowrap; /* Prevent text wrapping */
   }
   
   .large-number {
@@ -1182,8 +1314,15 @@ h2:after {
   }
   
   .about-text-column p {
-    font-size: 0.9rem;
-    margin-bottom: 10px;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    line-height: 1.8;
+  }
+  
+  .about-text-column.increased-spacing p {
+    font-size: 1.4rem;
+    margin-bottom: 25px;
+    line-height: 2;
   }
 
   .fixed-bottom-cta-container {
@@ -1201,6 +1340,73 @@ h2:after {
   .campaign-banner {
     padding: var(--space-md) 0;
     padding-top: 30px;
+  }
+}
+/* 重要なテキストのハイライト用スタイル */
+.highlight-important {
+  color: white;
+  background-color: red;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: inline-block;
+  margin: 5px 0;
+}
+
+/* Animation for text background */
+.animate-bg {
+  position: relative;
+  z-index: 1;
+  padding: 3px 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.animate-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background-color: var(--color-primary);
+  z-index: -1;
+  transition: width 1s ease-out;
+}
+
+.animate-bg-active::before {
+  width: 100%;
+}
+
+.animate-bg.highlight-red {
+  color: white;
+}
+
+.animate-bg.highlight-red::before {
+  background-color: var(--color-primary);
+}
+
+.large-text {
+  font-size: 2rem;
+}
+
+.normal-text {
+  font-size: 1.2rem !important;
+}
+
+.bold-text {
+  font-weight: bold;
+}
+
+@media (max-width: 640px) {
+  .highlight-important {
+    font-size: 1.2rem;
+    padding: 4px 8px;
+  }
+  
+  .large-text {
+    font-size: 1.5rem;
   }
 }
 </style>

@@ -1,30 +1,30 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const admin = require('firebase-admin');
+
+// Firebase Admin初期化（まだ初期化されていない場合）
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 // デバッグモード設定
 const DEBUG_MODE = false;
 
-// StripeのAPIキー管理
+// PayPalの認証情報
 // 本番環境では環境変数またはCloud Secret Managerを使用
+// 重要: 本番環境にデプロイする前に、以下のコマンドで本番用のPayPalクライアントIDとシークレットを設定してください:
+// firebase functions:config:set paypal.client_id=YOUR_PAYPAL_CLIENT_ID
+// firebase functions:config:set paypal.client_secret=YOUR_PAYPAL_CLIENT_SECRET
 
-// テスト環境か本番環境かを判定
-// process.env.STRIPE_SECRET_KEYが設定されていればそれを使用、なければデフォルトのテストキーを使用
-// 本番環境用のStripe秘密キーを安全に管理するために分割
-// 実際のデプロイ時には環境変数を使用することを推奨
-const LIVE_KEY_1 = "sk_live_51RT4oBE6MxxtLpP0vYvQ9ISTsRrp30URxIHU5giil";
-const LIVE_KEY_2 = "OFhx2WzmibA0hCbv0WGpcaldicPZbZ10M2TgwTkBYMEaS3E00Dktf5KiM";
+// PayPalモジュールをインポート
+const paypalFunctions = require('./paypal');
 
-// 本番環境用のキーを使用
-const STRIPE_KEY = LIVE_KEY_1 + LIVE_KEY_2;
-
-// 重要: 本番環境にデプロイする前に、以下のコマンドで本番用のStripe秘密キーを設定してください:
-// firebase functions:config:set stripe.secret_key=\
-// sk_live_XXXXXXXXXXXXXXXXXXXXXXXX
-// その後、コードを以下のように変更してfunctionsをデプロイしてください:
-// const {config} = require("firebase-functions");
-// const STRIPE_KEY = config().stripe.secret_key;
+// PayPal関数をエクスポート
+exports.createPayPalPlan = paypalFunctions.createPayPalPlan;
+exports.validateCouponPayPal = paypalFunctions.validateCouponPayPal;
+exports.handlePayPalWebhook = paypalFunctions.handlePayPalWebhook;
 
 /**
- * クーポン検証関数 - Stripe連携版 (v2)
+ * クーポン検証関数 - 旧Stripe連携版 (v2) - 互換性のために残す
  */
 exports.validateCouponV3 = onCall({
   region: "asia-northeast1",

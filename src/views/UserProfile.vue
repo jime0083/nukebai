@@ -17,6 +17,13 @@
         <p><strong>現在の報告回数:</strong> <span class="highlight-stat">{{ user.reportCount !== undefined ? user.reportCount : 'N/A' }}</span></p>
         <p><strong>現在の検索回数:</strong> <span class="highlight-stat">{{ user.searchCount !== undefined ? user.searchCount : 'N/A' }}</span></p>
 
+        <!-- アンケートボタンセクション - 3回以上検索とレポートを使用したユーザーにのみ表示 -->
+        <div v-if="showSurveyButton" class="survey-section">
+          <h3>アンケートにご協力ください</h3>
+          <p>サービス改善のため、あなたのご意見をお聞かせください。</p>
+          <button @click="handleSurvey" class="survey-button">アンケートに答える</button>
+        </div>
+
         <div class="coupon-section">
           <h3>クーポンコードを利用</h3>
           <div class="coupon-input-group">
@@ -40,6 +47,12 @@ const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const couponCode = ref(''); // クーポンコード入力用の ref
 
+// 3回以上検索とレポートを使用したユーザーにのみアンケートボタンを表示
+const showSurveyButton = computed(() => {
+  if (!user.value) return false;
+  return (user.value.searchCount >= 3 && user.value.reportCount >= 3);
+});
+
 const handleUsePoints = () => {
   // TODO: Implement point usage logic (e.g., show popup)
   console.log('「ポイントを利用する」ボタンがクリックされました。');
@@ -55,6 +68,13 @@ const handleRedeemCoupon = () => {
   console.log(`クーポンコード「${couponCode.value}」を利用しようとしています。`);
   alert(`クーポンコード「${couponCode.value}」の利用機能は現在準備中です。`);
   couponCode.value = ''; // 入力フィールドをクリア
+};
+
+// アンケートボタンがクリックされた時の処理
+const handleSurvey = () => {
+  // Googleフォームのアンケートページに移動
+  const surveyUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfSNF-K52OLKclkctRWiZuAAuIM7xNi1jZCNbepRO4v56ruBA/viewform?usp=header';
+  window.open(surveyUrl, '_blank'); // 新しいタブでアンケートを開く
 };
 
 </script>
@@ -197,5 +217,42 @@ const handleRedeemCoupon = () => {
   text-align: center;
   padding: 20px;
   font-size: 1.1em;
+}
+
+/* アンケートセクションのスタイル */
+.survey-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius-md);
+  border-left: 4px solid var(--color-primary, #007bff);
+}
+
+.survey-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--color-primary, #007bff);
+}
+
+.survey-section p {
+  margin-bottom: 15px;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.survey-button {
+  background-color: var(--color-primary, #007bff);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.survey-button:hover {
+  background-color: var(--color-primary-dark, #0056b3);
 }
 </style>

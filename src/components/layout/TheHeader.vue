@@ -46,7 +46,8 @@ function closeMenu() {
       
       <nav class="main-nav" :class="{ active: showMenu }">
         <ul class="nav-list">
-          <li><router-link to="/campaign" @click="closeMenu" class="campaign-link">期間限定キャンペーン</router-link></li>
+          <!-- プレオープン期間中は期間限定キャンペーンリンクを非表示 -->
+          <!-- <li><router-link to="/campaign" @click="closeMenu" class="campaign-link">期間限定キャンペーン</router-link></li> -->
           <li><router-link to="/submit-review" @click="closeMenu">報告</router-link></li>
           <li><router-link to="/search" @click="closeMenu">検索</router-link></li>
           <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">ログイン</router-link></li>

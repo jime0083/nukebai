@@ -14,14 +14,26 @@ import ContractManagement from '../views/ContractManagement.vue';
 import NotFound from '../views/NotFound.vue';
 import Search from '../views/Search.vue';
 import Campaign from '../views/Campaign.vue';
+import TermsOfService from '../views/TermsOfService.vue';
+import PrivacyPolicy from '../views/PrivacyPolicy.vue';
+import Prerelease from '../views/Prerelease.vue';
 import { useUserStore } from '../stores/user';
+
+// プレリリースキャンペーン期間の判定関数
+function isPrereleaseCampaignPeriod() {
+  const today = new Date();
+  const campaignStartDate = new Date('2025-06-19');
+  const campaignEndDate = new Date('2025-07-31');
+  campaignEndDate.setHours(23, 59, 59, 999); // 終了日の終わりまで
+  
+  return today >= campaignStartDate && today <= campaignEndDate;
+}
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
-    meta: { requiresAge: true }
+    component: Home
   },
   {
     path: '/login',
@@ -42,37 +54,35 @@ const routes = [
     path: '/submit-review',
     name: 'SubmitReview',
     component: SubmitReview,
-    meta: { requiresAuth: true, requiresAge: true, requiresPremium: true }
+    meta: { requiresAuth: true }
   },
   {
     path: '/review/:id',
     name: 'ReviewDetails',
-    component: ReviewDetails,
-    meta: { requiresAge: true }
+    component: ReviewDetails
   },
   {
     path: '/profile',
     name: 'UserProfile',
     component: UserProfile,
-    meta: { requiresAuth: true, requiresAge: true }
+    meta: { requiresAuth: true }
   },
   {
     path: '/subscription',
     name: 'Subscription',
     component: Subscription,
-    meta: { requiresAuth: true, requiresAge: true }
+    meta: { requiresAuth: true }
   },
   {
     path: '/search',
     name: 'Search',
-    component: Search,
-    meta: { requiresAge: true } // Only age verification is a hard prerequisite for the route itself
+    component: Search
   },
   {
     path: '/contract-management',
     name: 'ContractManagement',
     component: ContractManagement,
-    meta: { requiresAuth: true, requiresAge: true }
+    meta: { requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -87,8 +97,22 @@ const routes = [
   {
     path: '/campaign',
     name: 'Campaign',
-    component: Campaign,
-    meta: { requiresAge: true }
+    component: Campaign
+  },
+  {
+    path: '/terms',
+    name: 'TermsOfService',
+    component: TermsOfService
+  },
+  {
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy
+  },
+  {
+    path: '/prerelease',
+    name: 'Prerelease',
+    component: Prerelease
   }
 ];
 
@@ -141,11 +165,7 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore(); // ストアインスタンスを取得
   await waitForUserStoreInitialization(userStore); // userStoreの初期化を待つ
 
-  // Check if route requires age verification
-  if (to.meta.requiresAge && !localStorage.getItem('ageVerified')) {
-    next({ name: 'AgeVerification', query: { redirect: to.fullPath } });
-    return;
-  }
+  // Age verification removed - users can access all pages directly
 
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
@@ -166,13 +186,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Check if route requires premium subscription
-  if (to.meta.requiresPremium) {
-    if (userStore.subscriptionStatus !== 'premium' && !userStore.isAdmin) {
-      next({ name: 'Subscription', query: { redirect: to.fullPath, reason: 'premium_required' } });
-      return;
-    }
-  }
+  // Premium subscription requirement removed - logged-in users can access all features
 
   next();
 });

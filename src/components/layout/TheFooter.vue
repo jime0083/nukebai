@@ -10,7 +10,7 @@ const currentYear = new Date().getFullYear()
     <div class="container">
       <div class="footer-content">
         <div class="footer-section">
-          <h3>ヌけないアダルト動画レビュー</h3>
+          <h3>ヌケバイ</h3>
           <p>ヌけないアダルト動画を見て無駄にするお金と時間をゼロにする</p>
         </div>
         
@@ -37,8 +37,8 @@ const currentYear = new Date().getFullYear()
         <div class="footer-section">
           <h4>法的情報</h4>
           <ul>
-            <li><a href="#">利用規約</a></li>
-            <li><a href="#">プライバシーポリシー</a></li>
+            <li><router-link to="/terms">利用規約</router-link></li>
+            <li><router-link to="/privacy">プライバシーポリシー</router-link></li>
             <li><a href="#">特定商取引法に基づく表記</a></li>
           </ul>
         </div>
