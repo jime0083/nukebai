@@ -140,15 +140,10 @@ Chrome拡張からの報告が動作し、クライアントから users.points 
 
 ★★★ 本番反映 保留中(2026-08-14 ユーザー指示: 本番確認が今できないため後回し) ★★★
   Phase 2 の実装(2-2〜2-5)はコミット・push 済みだが【本番未反映】。
-  以下を必ず「同時に」一括デプロイする必要がある(バラバラだと投稿が壊れる):
-    (1) Hosting: npm run build → firebase deploy --only hosting
-        ※旧フロントのままだと reviews.js が users.points をクライアント書込 → 新ルールで投稿失敗
-    (2) Firestore rules: firebase deploy --only firestore:rules
-    (3) Functions: firebase deploy --only functions (awardPointsOnPost 追加 / validateCouponV3 削除)
-  ※Phase 3 以降のフロント変更も、この保留中デプロイに合流させて一括反映する。
-  ※デプロイ後の手動確認: Web(ログイン→報告→ポイント→検索ヒット)、
-    拡張(chrome://extensions で再読込→ログイン→報告→Web検索で反映)。
-  ※ロールバック用: firestore.rules.production-backup-2026-08-14
+  → 保留中タスクの詳細・手順は manual-work.txt に集約(M-1: 一括デプロイ /
+    M-2: 拡張実機テスト / M-3: videoId マイグレーション)。
+  ※Phase 3 以降のフロント変更も、この保留中デプロイ(M-1)に合流させて一括反映する。
+  ※本番確認が可能になったら manual-work.txt の未実施項目を順に消化する。
 
 =====================================================================
 Phase 3: データ整合性 (problem: C-1, C-2, C-3)
