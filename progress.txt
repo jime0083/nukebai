@@ -138,15 +138,28 @@ Chrome拡張からの報告が動作し、クライアントから users.points 
 書き換えられないこと
 → 完了したら停止してユーザーの指示を待つ
 
+★★★ 本番反映 保留中(2026-08-14 ユーザー指示: 本番確認が今できないため後回し) ★★★
+  Phase 2 の実装(2-2〜2-5)はコミット・push 済みだが【本番未反映】。
+  以下を必ず「同時に」一括デプロイする必要がある(バラバラだと投稿が壊れる):
+    (1) Hosting: npm run build → firebase deploy --only hosting
+        ※旧フロントのままだと reviews.js が users.points をクライアント書込 → 新ルールで投稿失敗
+    (2) Firestore rules: firebase deploy --only firestore:rules
+    (3) Functions: firebase deploy --only functions (awardPointsOnPost 追加 / validateCouponV3 削除)
+  ※Phase 3 以降のフロント変更も、この保留中デプロイに合流させて一括反映する。
+  ※デプロイ後の手動確認: Web(ログイン→報告→ポイント→検索ヒット)、
+    拡張(chrome://extensions で再読込→ログイン→報告→Web検索で反映)。
+  ※ロールバック用: firestore.rules.production-backup-2026-08-14
+
 =====================================================================
 Phase 3: データ整合性 (problem: C-1, C-2, C-3)
 =====================================================================
 目的: videoId 正規化と理由マスタ一本化で検索ヒット率を保証する
 
-Work 3-1: videoId 正規化ユーティリティ (C-1)
-  [ ] src/utils/videoId.js を新規作成: normalizeVideoId(input) を実装
-      (全角→半角 / 大文字化 / trim / 「ABCD123」「ABCD 123」→「ABCD-123」統一)
-  [ ] normalizeVideoId の単体テストを作成(全角・小文字・ハイフン無し・空白入り等)
+Work 3-1: videoId 正規化ユーティリティ (C-1) 【完了 2026-08-14】
+  [x] src/utils/videoId.js を新規作成: normalizeVideoId(input) を実装
+      (全角→半角 / 大文字化 / trim / 区切り統一 / 「ABCD123」→「ABCD-123」)
+  [x] 単体テスト src/utils/videoId.test.mjs を作成し node 実行(18件 全pass)
+      ※Phase 6 で Vitest 基盤へ統合予定
 
 Work 3-2: 正規化の全経路適用 (C-1)
   [ ] ReviewForm.vue の投稿時に normalizeVideoId を適用
