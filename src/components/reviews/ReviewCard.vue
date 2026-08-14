@@ -53,8 +53,8 @@ const reasonsToShow = computed(() => {
   <div class="review-card" :class="{ 'limited-view': isLimitedView && !showDetails }">
     <div v-if="isLimitedView && !showDetails" class="premium-overlay">
       <div class="premium-message">
-        <p>プレミアム会員になって全ての情報を見る</p>
-        <router-link to="/subscription" class="premium-button">プレミアムに登録</router-link>
+        <p>ログインすると全ての情報を見られます</p>
+        <router-link to="/login" class="premium-button">ログイン</router-link>
       </div>
     </div>
     

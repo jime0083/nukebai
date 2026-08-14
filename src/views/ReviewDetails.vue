@@ -21,10 +21,10 @@
         <div v-else-if="review" class="review-details-content">
           <ReviewCard :review="review" :showDetails="true" />
           
-          <div class="premium-prompt" v-if="!userStore.user || userStore.subscriptionStatus === 'free'">
-            <h3>より多くのレビューを閲覧するには</h3>
-            <p>プレミアム会員になると、すべてのレビュー情報にアクセスできます。</p>
-            <router-link to="/subscription" class="primary">プレミアムに登録する</router-link>
+          <div class="premium-prompt" v-if="userStore.user">
+            <h3>プレミアムプラン</h3>
+            <p>プレミアムプランは近日実装予定です。</p>
+            <router-link to="/subscription" class="primary">詳しく見る</router-link>
           </div>
         </div>
       </div>

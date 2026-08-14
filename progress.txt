@@ -190,38 +190,39 @@ Phase 4: 課金まわりの整理 (problem: A-2〜A-5, B-3, D-4)
   ただし課金ページは残し「プレミアムプランは近日実装予定」と表示する
 =====================================================================
 
-Work 4-1: Subscription.vue の「近日実装予定」化 (D-4, B-3)
-  [ ] Subscription.vue から Stripe Elements・カード入力・決済処理・
+Work 4-1: Subscription.vue の「近日実装予定」化 (D-4, B-3) 【完了 2026-08-14】
+  [x] Subscription.vue を全面刷新し Stripe Elements・カード入力・決済処理・
       クーポン検証・テスト用プランフォールバックを全て削除
-  [ ] ページ本体は残し「プレミアムプランは近日実装予定」の案内表示に置き換える
-      (/subscription ルートは存続)
-  [ ] customers/{uid}/payment_methods, subscriptions へのクライアント書き込み
-      コードを削除 (B-3)
+  [x] 「プレミアムプランは近日実装予定」の案内ページに置換(/subscription 存続)
+  [x] customers/payment_methods/subscriptions へのクライアント書き込みコードを撤去
+  ※B-3(customers ルール write:false 化)はデプロイ後の相互作用リスク(Stripe拡張が
+    クライアント書込トリガーを使う)を考慮し据え置き。problem.txt B-3 参照
 
-Work 4-2: Stripe関連コードの削除 (A-2)
-  [ ] package.json から @stripe/stripe-js を削除し npm install で lock 更新
-  [ ] functions/package.json から stripe を削除
-      (validateCouponV3 本体の削除は Work 2-4 で実施済みの想定。未実施なら合わせて削除)
-  [ ] Success.vue はサブスク完了ページとして不要になるため、ルートごと削除 or
-      汎用の完了ページとして文言修正(実装時にユーザーへ確認)
+Work 4-2: Stripe関連コードの削除 (A-2) 【完了 2026-08-14】
+  [x] package.json から @stripe/stripe-js を削除し npm install で lock 更新
+  [x] functions/package.json の stripe は Work 2-4 で削除済み
+  [x] Success.vue とルート /success を削除(参照元が消え孤立していたため)
+  [x] (追加)未使用の stores/subscription.js(useSubscriptionStore)を削除
 
-Work 4-3: 未完成PayPalコードの削除 (A-4, A-5)
+Work 4-3: 未完成PayPalコードの削除 (A-4, A-5) 【完了 2026-08-14】
   ※課金再開時に正規の設計(サーバー経由・Webhook署名検証)で再実装する前提
-  [ ] src/services/paypal.js を削除
-  [ ] functions/paypal.js を削除し、functions/index.js の PayPal export を削除
+  [x] src/services/paypal.js を削除(services ディレクトリは空に)
+  [x] functions/paypal.js は Work 2-4 で削除済み
 
-Work 4-4: ContractManagement.vue の整理 (A-3)
-  [ ] 存在しない Functions 呼び出し(getSubscriptionDetails 等)を全て削除
-  [ ] ページは残し「プレミアムプランは近日実装予定」の案内表示に統一
-      (/contract-management ルートは存続)
+Work 4-4: ContractManagement.vue の整理 (A-3) 【完了 2026-08-14】
+  [x] 存在しない Functions 呼び出し(getSubscriptionDetails 等)を全て削除
+  [x] 「近日実装予定」の案内ページに統一(/contract-management 存続、auth要件解除)
 
-Work 4-5: プレミアム導線の文言統一
-  [ ] Home / ReviewDetails 等の「プレミアムに登録」導線は残しつつ、遷移先の
-      /subscription で「近日実装予定」が表示されることを確認
-  [ ] ReviewDetails.vue の premium-prompt 文言を「近日実装予定」前提に調整
+Work 4-5: プレミアム導線の文言整理 【完了 2026-08-14】
+  [x] TheFooter の「プレミアムプラン」リンクは存続(遷移先=近日実装予定ページ)
+  [x] ReviewDetails の premium-prompt を「近日実装予定/詳しく見る」に変更(ログイン
+      ユーザーのみ表示)
+  [x] ReviewCard の制限オーバーレイは実質ログインゲートのため「ログインすると全ての
+      情報を見られます」+/login 導線に修正
+  ※未ログイン時の検索ログイン必須化・文言のさらなる整合は Phase 5 Work 5-2
 
 Phase 4 完了条件: 決済関連の実行時エラーが0になり、課金ページが
-「プレミアムプランは近日実装予定」表示で正常に閲覧できること
+「プレミアムプランは近日実装予定」表示で正常に閲覧できること 【達成・本番反映はM-1】
 → 完了したら停止してユーザーの指示を待つ
 
 =====================================================================

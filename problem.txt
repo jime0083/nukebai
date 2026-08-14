@@ -39,13 +39,14 @@
     applyCouponToSubscription は functions/ に未実装。また getFunctions() を
     リージョン指定なしで呼んでおり、実装されたとしても asia-northeast1 に届かない
   - 影響: 契約管理ページ(解約・再開・クーポン適用)が全て機能しない
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Work4-4。ContractManagement を近日実装予定
+    ページに置換し、存在しない Functions 呼び出しを全撤去)
 
 [A-4] src/services/paypal.js が壊れている
   - 内容: (1) '@paypal/paypal-js' が package.json に無い
     (2) validateCoupon() 内で getFunctions/httpsCallable を import していない
   - 影響: このファイルを import した時点でビルド失敗の可能性。現状未使用の模様
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Work4-3。src/services/paypal.js を削除)
 
 [A-5] functions/paypal.js の依存・認証情報が未整備
   - 内容: (1) node-fetch が functions/package.json に無い(デプロイ時エラー)
@@ -53,8 +54,8 @@
     (3) Webhook が onCall で実装されている(PayPalからのHTTP POSTを受けられない、
         署名検証もない)
   - 影響: PayPal決済は一切機能しない
-  - ステータス: functions側は解決済み(2026-08-14 Work2-4 で functions/paypal.js と
-    PayPal export を削除)。フロントの src/services/paypal.js 削除は Phase 4 Work 4-3 で実施
+  - ステータス: 解決済み(2026-08-14。functions側=Work2-4 で削除、フロント
+    src/services/paypal.js=Work4-3 で削除)。課金再開時は正規設計で再実装する
 
 =====================================================================
 セクションB: セキュリティ
@@ -94,7 +95,13 @@
   - 内容: Subscription.vue が customers/{uid}/payment_methods, subscriptions を
     クライアントから addDoc。status もクライアント/PayPal側の未検証データで更新
   - 影響: 課金ステータスの偽装が可能(無料でプレミアム化)
-  - ステータス: 未着手
+  - ステータス: 一部対応(2026-08-14 Work4-1 で customers へのクライアント書き込み
+    コードを全撤去)。ただし firestore.rules の customers は現状 write 可のまま据え置き:
+    (1) 課金凍結中でサブスク状態は何も gate していない=実害が低い
+    (2) Stripe公式拡張(ext-firestore-stripe-payments-*)がクライアントの
+        checkout_sessions 書込をトリガーに使うため、write:false 化は拡張の挙動と
+        相互作用する。→ Stripe拡張のアンインストール時に合わせて締めるのが安全。
+    今後 Stripe拡張を外す判断がされたら customers を write:false に更新すること
 
 [B-4] Chrome拡張が未認証で Firestore に直接投稿
   - 内容: chrome-extension/popup.js が Firebase Auth なしで addDoc。
@@ -187,7 +194,8 @@
   - 影響: 存在しない商品の購入導線という重大な信頼性問題
   - 決定(2026-08-14): 課金凍結に伴い決済フローごと削除。課金ページは残し
     「プレミアムプランは近日実装予定」表示に置き換える
-  - ステータス: 未着手
+  - ステータス: 解決済み(2026-08-14 Work4-1。Subscription.vue を近日実装予定
+    ページに全面刷新し、テスト用プラン・決済フローを撤去)
 
 [D-5] ポイント利用機能が「準備中アラート」のまま露出
   - 内容: UserProfile「ポイントを利用する」/ クーポン利用欄が alert のみ。

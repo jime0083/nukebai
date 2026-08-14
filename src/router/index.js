@@ -58,8 +58,7 @@ const routes = [
   {
     path: '/subscription',
     name: 'Subscription',
-    component: Subscription,
-    meta: { requiresAuth: true }
+    component: Subscription
   },
   {
     path: '/search',
@@ -69,18 +68,12 @@ const routes = [
   {
     path: '/contract-management',
     name: 'ContractManagement',
-    component: ContractManagement,
-    meta: { requiresAuth: true }
+    component: ContractManagement
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound
-  },
-  {
-    path: '/success',
-    name: 'success',
-    component: () => import('../views/Success.vue')
   },
   {
     path: '/terms',
