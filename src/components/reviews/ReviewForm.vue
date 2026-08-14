@@ -73,17 +73,20 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useReasonsStore } from '../../stores/reasons'
 import { useReviewsStore } from '../../stores/reviews'
 import { useUserStore } from '../../stores/user'
 
 
 const emit = defineEmits(['submitted'])
+const route = useRoute()
 const reasonsStore = useReasonsStore()
 const reviewsStore = useReviewsStore()
 const userStore = useUserStore()
 
-const videoId = ref('')
+// 検索の0件表示から「この動画を報告する」で遷移してきた場合、videoId を引き継ぐ (F-1)
+const videoId = ref(typeof route.query.videoId === 'string' ? route.query.videoId : '')
 const videoTitle = ref('')
 const selectedReasons = ref([])
 

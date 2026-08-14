@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { auth } from '../firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,6 +12,23 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const resetMessage = ref('')
+
+async function handlePasswordReset() {
+  if (!email.value) {
+    error.value = 'パスワード再設定には、まずメールアドレスを入力してください。'
+    return
+  }
+  error.value = ''
+  resetMessage.value = ''
+  try {
+    await sendPasswordResetEmail(auth, email.value)
+    resetMessage.value = 'パスワード再設定用のメールを送信しました。メールをご確認ください。'
+  } catch (err) {
+    console.error('Password reset error:', err)
+    error.value = getErrorMessage(err.code)
+  }
+}
 
 async function handleLogin() {
   if (!email.value || !password.value) {
@@ -77,7 +94,11 @@ function getErrorMessage(errorCode) {
           <div v-if="error" class="error-message">
             {{ error }}
           </div>
-          
+
+          <div v-if="resetMessage" class="reset-message">
+            {{ resetMessage }}
+          </div>
+
           <form @submit.prevent="handleLogin">
             <div class="form-group">
               <label for="email">メールアドレス</label>
@@ -120,6 +141,7 @@ function getErrorMessage(errorCode) {
           
           <div class="auth-footer">
             <p>アカウントをお持ちでない場合は <router-link to="/register">新規登録</router-link></p>
+            <p><a href="#" @click.prevent="handlePasswordReset" class="reset-link">パスワードを忘れた場合</a></p>
           </div>
         </div>
       </div>
@@ -159,6 +181,19 @@ h2 {
   padding: var(--space-md);
   border-radius: var(--border-radius-sm);
   margin-bottom: var(--space-lg);
+}
+
+.reset-message {
+  background-color: rgba(56, 142, 60, 0.12);
+  color: var(--color-success, #388e3c);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.reset-link {
+  color: var(--color-on-surface-variant);
+  font-size: 0.9rem;
 }
 
 .form-group {
