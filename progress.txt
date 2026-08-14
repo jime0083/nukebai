@@ -269,11 +269,13 @@ Phase 5 完了条件: 文言と実装が一致し、検索→報告→検索の�
 Phase 6: 品質基盤・リファクタリング (problem: E-3, E-4, E-5, B-4, F-3, F-4)
 =====================================================================
 
-Work 6-1: Lint/テスト基盤 (E-4)
-  [ ] ESLint(eslint-plugin-vue) + Prettier を導入し npm scripts に追加
-  [ ] Vitest を導入し、stores/user.js・stores/reasons.js・utils/videoId.js の
-      単体テストを作成
-  [ ] package.json の name を "nukebai" に変更
+Work 6-1: Lint/テスト基盤 (E-4) 【完了 2026-08-14】
+  [x] ESLint(eslint-plugin-vue)+ Prettier を導入(.eslintrc.cjs/.prettierrc.json/
+      各ignore)。npm scripts に lint / format / test / test:watch を追加。lint は 0 problems
+  [x] Vitest を導入(vite.config.js に test 設定)。utils/videoId(18)・stores/reasons(4)・
+      stores/user(5)の単体テスト計27件を作成し全pass
+  [x] package.json の name を "nukebai" に変更
+  ※既存全ファイルの prettier 一括整形は差分が巨大になるため未実施(基盤導入に留める)
 
 Work 6-2: 巨大ファイル分割 (E-3)
   [ ] Home.vue をセクション別コンポーネント(HeroSection / AboutSection /

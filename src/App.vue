@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { auth, db } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
@@ -9,7 +8,6 @@ import { useUserStore } from './stores/user'
 import TheHeader from './components/layout/TheHeader.vue'
 import TheFooter from './components/layout/TheFooter.vue'
 
-const router = useRouter()
 const userStore = useUserStore()
 const isLoading = ref(true)
 

@@ -26,7 +26,8 @@ export function normalizeVideoId(input) {
 
   // 1. 全角英数記号(！-～)→ 半角
   s = s.replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
-  // 全角スペース → 半角スペース
+  // 全角スペース → 半角スペース(全角スペースの正規表現は意図的)
+  // eslint-disable-next-line no-irregular-whitespace
   s = s.replace(/　/g, ' ');
 
   // 2 + 3. トリム + 大文字化

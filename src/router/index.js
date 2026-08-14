@@ -90,7 +90,7 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior() {
     // 常にページの最上部にスクロールする
     return { top: 0 }
   }
