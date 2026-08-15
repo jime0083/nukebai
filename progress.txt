@@ -277,13 +277,13 @@ Work 6-1: Lint/テスト基盤 (E-4) 【完了 2026-08-14】
   [x] package.json の name を "nukebai" に変更
   ※既存全ファイルの prettier 一括整形は差分が巨大になるため未実施(基盤導入に留める)
 
-Work 6-2: 巨大ファイル分割 (E-3) 【保留・要ランタイム検証(2026-08-15)】
-  [ ] Home.vue(約1250行)をセクション別コンポーネントに分割
+Work 6-2: 巨大ファイル分割 (E-3) 【完了 2026-08-15】
+  [x] Home.vue を HeroSection / AboutSection / HowToUseSection / BottomCta に分割
+      (src/components/home/)。Home.vue は 842行→114行、各部品も800行以下
+  [x] v-html で挿入する .highlight-red は :deep() で装飾、背景画像パスを ../../ に修正
+  [x] Chromeヘッドレスで分割前後のスクショ(デスクトップ+モバイル)を撮影し
+      見た目が完全一致することを自己検証(年齢ゲートは一時バイパス→git checkoutで復元)
   [-] Subscription.vue の分割は不要化(Phase4 で近日実装予定ページに刷新し約90行に)
-  ※保留理由: Home.vue は scoped CSS が大量で相互依存(共有クラス・メディアクエリ)。
-    子コンポーネント化は見た目を変えないリファクタだが、当環境ではブラウザで
-    レイアウト崩れを視覚検証できない。検証なしで本番反映するとヒーロー/レスポンシブ
-    崩れを見逃すリスクが高いため、dev サーバ+ブラウザで検証できる状況で実施する。
 
 Work 6-3: 認証フローの整理 (E-5) 【保留・要ランタイム検証(2026-08-15)】
   [ ] App.vue の onAuthStateChanged 処理を composable 化し、router ガードを簡素化

@@ -242,9 +242,9 @@
 [E-3] 巨大ファイル
   - 内容: Home.vue 1411行 / Subscription.vue 1106行 / Campaign.vue 870行 /
     Prerelease.vue 664行。ルール上限(max 800、推奨200-400)超過
-  - ステータス: 一部解決。Campaign/Prerelease は削除(Phase1)、Subscription は
-    近日実装予定ページ化で約90行に(Phase4)。Home.vue(約1250行)の分割は
-    Work6-2 として保留(要ランタイム視覚検証。progress.txt 参照)
+  - ステータス: 解決済み(2026-08-15)。Campaign/Prerelease削除(Phase1)、
+    Subscription近日実装予定化で約90行(Phase4)、Home.vue は Work6-2 で
+    842→114行にコンポーネント分割(スクショで見た目一致を検証)。全ファイル800行以下。
 
 [E-4] テスト・Lint・型チェックが一切ない
   - 内容: テスト0件、ESLint/Prettier 未設定(フロント側)、TypeScript未導入。
