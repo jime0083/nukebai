@@ -95,7 +95,8 @@
     isLoading=false に到達せず無限ローディング。
   - 修正: (1) ルールを map.get(field, default) で欠損に強くする
           (2) App.vue の認証処理を try/finally 化し、書込失敗でも必ず isLoading=false
-  - ステータス: 修正中(2026-08-15)
+  - ステータス: 修正・本番反映済み(2026-08-15)。本番ルールに .get 版反映を確認。
+    ユーザーのハードリロードでの最終確認待ち。
 
 [B-2] ポイント/ユーザー統計の付与がクライアント側で行われている
   - 内容: stores/reviews.js submitReview() がクライアントから自分の users doc の
