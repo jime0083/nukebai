@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const reportError = document.getElementById('reportError');
   const reportForm = document.getElementById('reportForm');
   const successMessage = document.getElementById('successMessage');
+  const pointsMessage = document.getElementById('pointsMessage');
   const reportAgainButton = document.getElementById('reportAgainButton');
 
   function showError(el, message) {
@@ -256,9 +257,31 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
       }
 
-      await db.collection('posts').add(postData);
+      const docRef = await db.collection('posts').add(postData);
       reportForm.style.display = 'none';
       successMessage.style.display = 'block';
+
+      // サーバー(awardPointsOnPost トリガー)が post に書き戻す pointsEarned を待ち、
+      // 実際の付与ポイント数を表示する。取得できなければ固定文言にフォールバック。
+      pointsMessage.textContent = 'ポイントを付与しています...';
+      let settled = false;
+      const finish = (text) => {
+        if (settled) return;
+        settled = true;
+        if (typeof unsubscribe === 'function') unsubscribe();
+        clearTimeout(timer);
+        pointsMessage.textContent = text;
+      };
+      const timer = setTimeout(() => finish('ポイントが付与されました。'), 8000);
+      const unsubscribe = docRef.onSnapshot(
+        (snap) => {
+          const data = snap.data();
+          if (data && typeof data.pointsEarned === 'number') {
+            finish(`${data.pointsEarned}ポイント付与されました！`);
+          }
+        },
+        () => finish('ポイントが付与されました。')
+      );
     } catch (e) {
       showError(reportError, '報告の送信に失敗しました。時間をおいて再度お試しください。');
       reportButton.disabled = false;
@@ -275,6 +298,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       clearError(reportError);
       reportButton.disabled = false;
       reportButton.textContent = '報告';
+      pointsMessage.textContent = 'ポイントが付与されました。';
       successMessage.style.display = 'none';
       reportForm.style.display = 'block';
     });
