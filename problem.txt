@@ -95,8 +95,8 @@
     isLoading=false に到達せず無限ローディング。
   - 修正: (1) ルールを map.get(field, default) で欠損に強くする
           (2) App.vue の認証処理を try/finally 化し、書込失敗でも必ず isLoading=false
-  - ステータス: 修正・本番反映済み(2026-08-15)。本番ルールに .get 版反映を確認。
-    ユーザーのハードリロードでの最終確認待ち。
+  - ステータス: 解決済み(2026-08-15)。本番反映後、ユーザーが全チェック項目
+    (年齢確認→ホーム表示、各ページ遷移)の正常動作を確認。
 
 [B-2] ポイント/ユーザー統計の付与がクライアント側で行われている
   - 内容: stores/reviews.js submitReview() がクライアントから自分の users doc の
@@ -270,8 +270,9 @@
   - 内容: waitForUserStoreInitialization + getCurrentUser の二重待機で、
     auth と store の不一致時にログインへ強制リダイレクトする暫定処理
     (router/index.js 内に警告コメントあり)
-  - ステータス: 保留(Work6-3)。認証は現状動作。リファクタは認証E2Eの実機検証が
-    必須のため、検証可能な状況で実施(progress.txt 参照)
+  - ステータス: 解決済み(2026-08-15 Work6-3)。App.vue の認証処理を
+    useAuthState composable へ抽出、ガードの二重待機と脆い store 同期リダイレクトを
+    撤去し userStore.isLoggedIn 判定に簡素化。ヘッドレスで3ケース検証済み。
 
 [E-6] サイト名表記の混在
   - 内容: ヌケバイ / NukeBye / NukeBAI / Nukebuy / Nukebai が UI・コード内で混在

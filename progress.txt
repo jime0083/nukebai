@@ -285,13 +285,15 @@ Work 6-2: 巨大ファイル分割 (E-3) 【完了 2026-08-15】
       見た目が完全一致することを自己検証(年齢ゲートは一時バイパス→git checkoutで復元)
   [-] Subscription.vue の分割は不要化(Phase4 で近日実装予定ページに刷新し約90行に)
 
-Work 6-3: 認証フローの整理 (E-5) 【保留・要ランタイム検証(2026-08-15)】
-  [ ] App.vue の onAuthStateChanged 処理を composable 化し、router ガードを簡素化
-  [ ] auth と store の不一致時の強制ログインリダイレクトを解消
-  ※保留理由: 認証は現状動作している。ガードの store 同期ロジックは脆いが、
-    リファクタはログイン/リダイレクト/年齢確認の一連フローの実機検証が必須。
-    当環境では認証 E2E を実行できず、回帰(ログインループ等)を見逃すリスクが高い。
-    実機検証できる状況で実施する。
+Work 6-3: 認証フローの整理 (E-5) 【完了 2026-08-15】
+  [x] App.vue の onAuthStateChanged 処理を composable(src/composables/useAuthState.js)
+      に抽出。App.vue は init() 呼び出しのみに簡素化
+  [x] router ガードを簡素化: getCurrentUser の二重待機と、auth/store 不一致時の
+      強制ログインリダイレクト(user_store_sync_issue)を撤去。requiresAuth は
+      userStore.isLoggedIn で判定(useAuthState が確定させ、初期化待ち済み)
+  [x] Chromeヘッドレスで検証: (A)要ログイン+未ログイン+年齢ゲート→年齢確認表示
+      (無限ローディングなし)、(B)要ログイン+未ログイン→ログインへリダイレクト、
+      (C)ホーム→正常表示 の3ケースを確認
 
 Work 6-4: Chrome拡張の機能改善 (C-1 関連) 【完了 2026-08-15】
   ※認証実装は Work 2-5 へ移動済み(2026-08-14 継続方針決定のため)

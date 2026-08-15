@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 
 import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
@@ -96,26 +94,8 @@ const router = createRouter({
   }
 });
 
-// auth is now directly imported from '../firebase.js'
-// Firebase is initialized within firebase.js itself
-
-let isAuthInitialized = false; // 認証初期化済みフラグ
-
-function getCurrentUser() {
-  return new Promise((resolve, reject) => {
-    if (isAuthInitialized && auth.currentUser) {
-      resolve(auth.currentUser);
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe(); // 一度だけ実行
-      isAuthInitialized = true;
-      resolve(user);
-    }, reject);
-  });
-}
-
-// userStoreの初期化を待つヘルパー関数
+// userStoreの初期化を待つヘルパー関数(App.vue の useAuthState が
+// onAuthStateChanged 完了時に isStoreInitialized を true にする)
 async function waitForUserStoreInitialization(store) {
   return new Promise(resolve => {
     if (store.isStoreInitialized) {
@@ -148,25 +128,12 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
 
-  // Check if route requires authentication
-  if (to.meta.requiresAuth) {
-    const user = await getCurrentUser(); // 認証状態が解決するまで待つ
-    if (!user) {
-      next({ name: 'Login', query: { redirect: to.fullPath } });
-      return;
-    }
-    // userStore.user のチェックは、waitForUserStoreInitialization 後なので、より信頼性が高い
-    // ただし、Firebase認証ユーザー(user)とストアユーザー(userStore.user)が一致するかは別の問題
-    if (!userStore.user || userStore.user.uid !== user.uid) {
-      // ストアにユーザーがいない、または認証ユーザーとストアのユーザーが異なる場合
-      // App.vueでのストア設定処理が完了するのを待つか、エラーとして扱うか
-      // ここでは一旦、ログインへリダイレクトする（App.vueでの処理に期待）
-      next({ name: 'Login', query: { redirect: to.fullPath, reason: 'user_store_sync_issue' } });
-      return;
-    }
+  // 認証が必要なページ: userStore のログイン状態で判定する。
+  // userStore は useAuthState(onAuthStateChanged)が確定させ、上で初期化を待済み。
+  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    next({ name: 'Login', query: { redirect: to.fullPath } });
+    return;
   }
-
-  // Premium subscription requirement removed - logged-in users can access all features
 
   next();
 });

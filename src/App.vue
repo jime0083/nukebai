@@ -1,77 +1,16 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { auth, db } from './firebase'
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
-import { useUserStore } from './stores/user'
+import { onMounted } from 'vue'
+import { useAuthState } from './composables/useAuthState'
 
 import TheHeader from './components/layout/TheHeader.vue'
 import TheFooter from './components/layout/TheFooter.vue'
 
-const userStore = useUserStore()
-const isLoading = ref(true)
+// 認証状態の初期化は composable に集約(Work 6-3)
+const { isLoading, init } = useAuthState()
 
-onMounted(async () => { // Make onMounted async if needed for top-level await, though onAuthStateChanged callback handles async internally
-  // auth is now directly imported
-  onAuthStateChanged(auth, async (user) => { // Make the callback async
-    try {
-      if (user) {
-        // db is now directly imported
-        const userDocRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userDocRef);
-
-        if (docSnap.exists()) {
-          // User document exists, merge Auth data with Firestore data
-          const firestoreData = docSnap.data();
-          userStore.setUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName || firestoreData.displayName || user.email.split('@')[0],
-            photoURL: user.photoURL || firestoreData.photoURL, // Prefer Auth photoURL if available
-            role: firestoreData.role || 'user', // Default to 'user' if not set
-            subscriptionStatus: firestoreData.subscriptionStatus || 'free',
-            points: firestoreData.points || 0,
-            reportCount: firestoreData.reportCount || 0,
-            searchCount: firestoreData.searchCount || 0,
-            // ... any other fields from Firestore
-          });
-          // lastLoginAt の更新は補助的な処理。失敗してもアプリ表示を止めないよう
-          // ここでの例外は握りつぶす(finally で必ず isLoading を解除する)。
-          try {
-            await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
-          } catch (e) {
-            console.error('lastLoginAt の更新に失敗しました:', e);
-          }
-        } else {
-          // New user or no document, create one in Firestore
-          const newUserProfile = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName || user.email.split('@')[0],
-            photoURL: user.photoURL,
-            role: 'user', // Default role
-            subscriptionStatus: 'free', // Default subscription
-            points: 0,
-            reportCount: 0,
-            searchCount: 0,
-            createdAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-          };
-          await setDoc(userDocRef, newUserProfile);
-          userStore.setUser(newUserProfile); // Set user store with the new profile
-        }
-      } else {
-        userStore.clearUser()
-      }
-    } catch (e) {
-      console.error('認証状態の初期化中にエラーが発生しました:', e);
-    } finally {
-      // 何が起きても読み込み状態を解除し、アプリが固まらないようにする
-      isLoading.value = false
-    }
-  })
+onMounted(() => {
+  init()
 })
-
 </script>
 
 <template>
