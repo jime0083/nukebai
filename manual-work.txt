@@ -86,6 +86,38 @@ M-3. videoId 正規化マイグレーション(既存 posts データ)
    - 認証は firebase-tools のログイントークンを使用(期限切れ時は firebase login --reauth)。
    - M-1 デプロイ(新ルール適用)後に実行するのが安全(整合性のため)。
 
+============================================================
+M-4. Chrome拡張のGoogleログイン用 OAuthクライアントID作成(GCP)
+============================================================
+状態: [ ] 未実施(2026-08-15 追加。M-2 テスト中に Google ログイン要望 → F-5)
+
+背景:
+  拡張に Google ログインを実装(chrome.identity.getAuthToken + Firebase
+  signInWithCredential)。動作には GCP で「Chrome拡張」タイプの OAuth クライアントIDを
+  拡張IDに紐付けて作成し、manifest.json の oauth2.client_id に設定する必要がある。
+
+  拡張ID(manifest に key を追加して固定): cenehhpmcohahgainnmpajjgfffdbjab
+
+  ※コードは実装済み(manifest の key/identity/oauth2、popup の Google ボタン・処理)。
+    現状 oauth2.client_id は "REPLACE_WITH_CHROME_EXTENSION_OAUTH_CLIENT_ID..." のプレースホルダ。
+
+  手順(ユーザーの GCP コンソール作業):
+   1) 拡張を chrome://extensions で再読み込みし、拡張IDが
+      「cenehhpmcohahgainnmpajjgfffdbjab」であることを確認(key により固定)
+   2) Google Cloud Console → プロジェクト「nukebuy」→ APIとサービス → 認証情報
+   3) 「認証情報を作成」→「OAuth クライアント ID」
+      → アプリケーションの種類:「Chrome 拡張機能」(無い場合は「Chrome アプリ」)
+      → 名前: 任意(例: Nukebai Extension)
+      → アプリケーション ID(項目 ID): cenehhpmcohahgainnmpajjgfffdbjab
+      → 作成し、発行された「クライアント ID(...apps.googleusercontent.com)」をコピー
+   4) そのクライアントIDを Claude に伝える(または manifest.json の
+      oauth2.client_id を自分で置換)→ 拡張を再読み込み
+   5) OAuth 同意画面が未設定/テスト中の場合、ログインするアカウントを
+      テストユーザーに追加するか、公開ステータスを調整する
+
+  完了後:
+   - 拡張ポップアップの「Googleでログイン」で Google アカウントログインが可能になる。
+
 # ============================================================================
-# 以降、本番確認が必要な保留タスクが発生したらここに M-4, M-5... と追記する。
+# 以降、本番確認が必要な保留タスクが発生したらここに M-5, M-6... と追記する。
 # ============================================================================

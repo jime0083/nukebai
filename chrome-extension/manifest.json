@@ -1,13 +1,19 @@
 {
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsLqBuCaMC4fVFATivsiGgOUousM44/cdGS6DoWdelykO3CkQVgWVchEw8cj3TW+AwobbFOtKp4DyRU+DN089dCmJ63Y1+92GKB6W4Oxp4wmv+tNcbtBGrMj/VqSG03qoxfqBzsapXgD/QVDYA5Ntq1sOsVeSB6G5/kSmJAF2VoYxRPJqXOLNpkun1ga/f/PJ3Low207ADwtYGTqxFcySMBdUvmXEsS3v+kcl9bXBNAqMYMIOhZJ7s093T8XHXHF4lg2amDE4EuQ3357LO1DCXNsjWj3uRTD5DQTlhXn/5Vz0HlP9HIJ/YloKFw/AxSISdfkMvakYCRKgWLlCU4x70QIDAQAB",
   "name": "Nukebai Video Reporter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "ヌケバイに動画の報告をブラウザから直接投稿できます(ログインが必要です)。",
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "tabs",
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "REPLACE_WITH_CHROME_EXTENSION_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
   "action": {
     "default_popup": "popup.html"
   },

@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const loginButton = document.getElementById('loginButton');
+  const googleLoginButton = document.getElementById('googleLoginButton');
   const loginError = document.getElementById('loginError');
 
   const currentUserEmail = document.getElementById('currentUserEmail');
@@ -124,9 +125,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // Google ログイン(MV3: chrome.identity で OAuth トークンを取得し Firebase に連携)
+  googleLoginButton.addEventListener('click', () => {
+    clearError(loginError);
+    googleLoginButton.disabled = true;
+    googleLoginButton.textContent = 'ログイン中...';
+    chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+      if (chrome.runtime.lastError || !token) {
+        showError(
+          loginError,
+          'Googleログインに失敗しました。' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : '')
+        );
+        googleLoginButton.disabled = false;
+        googleLoginButton.textContent = 'Googleでログイン';
+        return;
+      }
+      try {
+        const credential = firebase.auth.GoogleAuthProvider.credential(null, token);
+        await auth.signInWithCredential(credential);
+        // 成功時は onAuthStateChanged が UI を切り替える
+      } catch (e) {
+        // キャッシュされたトークンが失効している可能性 → 破棄して再試行を促す
+        chrome.identity.removeCachedAuthToken({ token }, () => {});
+        showError(loginError, 'Googleログインに失敗しました。もう一度お試しください。');
+        googleLoginButton.disabled = false;
+        googleLoginButton.textContent = 'Googleでログイン';
+      }
+    });
+  });
+
   // ログアウト
   logoutButton.addEventListener('click', async () => {
+    const user = auth.currentUser;
     await auth.signOut();
+    // Google ログインの場合はキャッシュトークンも破棄(次回に別アカウントを選べるように)
+    if (user && chrome.identity && chrome.identity.clearAllCachedAuthTokens) {
+      chrome.identity.clearAllCachedAuthTokens(() => {});
+    }
   });
 
   // 報告

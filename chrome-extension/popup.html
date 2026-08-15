@@ -66,6 +66,28 @@
       background-color: #6c757d;
     }
     #logoutButton:hover { background-color: #545b62; }
+    .google-btn {
+      background-color: #4285f4;
+    }
+    .google-btn:hover { background-color: #357ae8; }
+    .or-divider {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin: 10px 0;
+      position: relative;
+    }
+    .or-divider span { background: #fff; padding: 0 8px; }
+    .or-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #eee;
+      z-index: -1;
+    }
     .error-text { color: #dc3545; font-size: 0.85em; margin-top: 6px; }
     .muted { color: #888; font-size: 0.85em; }
     a { color: #007bff; }
@@ -89,6 +111,8 @@
       <input type="password" id="password" placeholder="パスワード">
     </div>
     <button id="loginButton">ログイン</button>
+    <div class="or-divider"><span>または</span></div>
+    <button id="googleLoginButton" class="google-btn">Googleでログイン</button>
     <div id="loginError" class="error-text" style="display: none;"></div>
     <p class="muted" style="margin-top: 12px;">
       アカウントをお持ちでない場合は

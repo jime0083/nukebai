@@ -318,3 +318,16 @@ Phase 6 後の残タスク(ランタイム検証が可能になったら実施):
   → これらは manual-work.txt ではなく本 progress.txt で管理(本番操作ではなく
     「開発環境での実行検証」が前提のため)。
 -------------------------------------------------------------------
+
+=====================================================================
+追加対応(計画外・ユーザー要望): Chrome拡張の Google ログイン (F-5)
+=====================================================================
+Work X-1: 拡張に Google ログインを追加 (F-5) 【コード実装完了 2026-08-15 / GCP設定=M-4待ち】
+  [x] manifest に key を追加し拡張IDを固定(cenehhpmcohahgainnmpajjgfffdbjab)
+  [x] manifest に identity 権限・oauth2(client_id はプレースホルダ)を追加、version 0.3.0
+  [x] popup.html に「Googleでログイン」ボタン・スタイルを追加
+  [x] popup.js に chrome.identity.getAuthToken → firebase signInWithCredential
+      (GoogleAuthProvider.credential)によるログイン処理、ログアウト時のトークン破棄を追加
+  [ ] GCP で Chrome拡張タイプの OAuth クライアントID作成 → manifest.oauth2.client_id 設定
+      (ユーザー作業。manual-work.txt M-4)。設定後に拡張再読み込みで Google ログインが有効化
+  ※実機動作確認は M-4 完了後(当環境では Chrome 実行不可)

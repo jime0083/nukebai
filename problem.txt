@@ -287,3 +287,14 @@
 [F-4] 検索結果の理由内訳の見せ方が簡素
   - 内容: 件数の羅列のみ。件数順ソート・割合表示がない
   - ステータス: 解決済み(2026-08-15 Work6-5。件数降順ソート+割合バー表示に変更)
+
+[F-5] Chrome拡張にGoogleログインが無い(2026-08-15 ユーザー要望)
+  - 内容: 拡張のログインはメール/パスワードのみ(Work2-5)。Web版は Google ログイン
+    可能だが、拡張には無い。M-2 実機テスト中にユーザーより追加要望。
+  - 技術的制約: MV3 拡張では Web版の signInWithPopup が使えない。
+    chrome.identity.getAuthToken で Google OAuth トークンを取得し、Firebase の
+    signInWithCredential(GoogleAuthProvider.credential(null, token)) でサインインする。
+    → Google Cloud Console で「Chrome拡張」タイプの OAuth クライアントIDを、拡張IDに
+      紐付けて作成する必要がある(ユーザーの GCP コンソール作業=manual-work M-4)。
+    → 拡張IDを固定するため manifest に key を追加する。
+  - ステータス: 対応中(コードは Work 追加で実装、GCP設定は M-4 でユーザー実施)
