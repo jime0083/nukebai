@@ -9,6 +9,10 @@ const db = firebase.firestore();
 // ログイン状態はローカル永続化(ポップアップを閉じても維持)
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
+// Google ログイン用 OAuth クライアントID(Webアプリ型。GCP でリダイレクトURI
+// https://<拡張ID>.chromiumapp.org/ を許可しておくこと。manual-work M-4)
+const GOOGLE_CLIENT_ID = '1019921068987-ok1odk5kk0a6vgacjofn9rj1p4mdevii.apps.googleusercontent.com';
+
 // 動画IDの正規化
 // ※ Web(src/utils/videoId.js)の normalizeVideoId と同一ロジック(拡張は別コンテキスト
 //   のため import できず同一アルゴリズムをインライン化)。両者を変更する際は必ず揃えること。
@@ -125,43 +129,59 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Google ログイン(MV3: chrome.identity で OAuth トークンを取得し Firebase に連携)
+  // Google ログイン(MV3: launchWebAuthFlow で id_token を取得し Firebase に連携)
+  // ※ Webアプリ型 OAuth クライアントを使用。リダイレクトURIに
+  //   https://<拡張ID>.chromiumapp.org/ を GCP 側で許可しておく必要がある(M-4)。
   googleLoginButton.addEventListener('click', () => {
     clearError(loginError);
     googleLoginButton.disabled = true;
     googleLoginButton.textContent = 'ログイン中...';
-    chrome.identity.getAuthToken({ interactive: true }, async (token) => {
-      if (chrome.runtime.lastError || !token) {
+
+    const redirectUri = chrome.identity.getRedirectURL();
+    const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const authUrl =
+      'https://accounts.google.com/o/oauth2/v2/auth?' +
+      new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID,
+        response_type: 'id_token',
+        redirect_uri: redirectUri,
+        scope: 'openid email profile',
+        nonce: nonce,
+        prompt: 'select_account',
+      }).toString();
+
+    const resetButton = () => {
+      googleLoginButton.disabled = false;
+      googleLoginButton.textContent = 'Googleでログイン';
+    };
+
+    chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, async (responseUrl) => {
+      if (chrome.runtime.lastError || !responseUrl) {
         showError(
           loginError,
-          'Googleログインに失敗しました。' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : '')
+          'Googleログインに失敗しました。' +
+            (chrome.runtime.lastError ? chrome.runtime.lastError.message : '')
         );
-        googleLoginButton.disabled = false;
-        googleLoginButton.textContent = 'Googleでログイン';
+        resetButton();
         return;
       }
       try {
-        const credential = firebase.auth.GoogleAuthProvider.credential(null, token);
+        const hash = responseUrl.split('#')[1] || '';
+        const idToken = new URLSearchParams(hash).get('id_token');
+        if (!idToken) throw new Error('id_token が取得できませんでした');
+        const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
         await auth.signInWithCredential(credential);
         // 成功時は onAuthStateChanged が UI を切り替える
       } catch (e) {
-        // キャッシュされたトークンが失効している可能性 → 破棄して再試行を促す
-        chrome.identity.removeCachedAuthToken({ token }, () => {});
         showError(loginError, 'Googleログインに失敗しました。もう一度お試しください。');
-        googleLoginButton.disabled = false;
-        googleLoginButton.textContent = 'Googleでログイン';
+        resetButton();
       }
     });
   });
 
   // ログアウト
   logoutButton.addEventListener('click', async () => {
-    const user = auth.currentUser;
     await auth.signOut();
-    // Google ログインの場合はキャッシュトークンも破棄(次回に別アカウントを選べるように)
-    if (user && chrome.identity && chrome.identity.clearAllCachedAuthTokens) {
-      chrome.identity.clearAllCachedAuthTokens(() => {});
-    }
   });
 
   // 報告

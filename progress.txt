@@ -328,7 +328,8 @@ Work X-1: 拡張に Google ログインを追加 (F-5) 【コード実装完了 
   [x] popup.html に「Googleでログイン」ボタン・スタイルを追加
   [x] popup.js に chrome.identity.getAuthToken → firebase signInWithCredential
       (GoogleAuthProvider.credential)によるログイン処理、ログアウト時のトークン破棄を追加
-  [x] GCP で OAuth クライアントID作成(ユーザー実施)→ manifest.oauth2.client_id 設定済み
-      (1019921068987-ok1odk5kk0a6vgacjofn9rj1p4mdevii.apps.googleusercontent.com)
-  [ ] 拡張再読み込み後の Google ログイン実機テスト(M-2/M-4 に合流)
+  [x] GCP で OAuth クライアントID作成(ユーザー実施)
+  [x] 【修正】getAuthToken で "bad client id" → launchWebAuthFlow 方式へ変更(0.3.1)。
+      manifest の oauth2 を削除、popup.js を id_token 取得+signInWithCredential に刷新
+  [ ] GCP でリダイレクトURI追加(M-4)→ 拡張再読み込み後の Google ログイン実機テスト
   ※実機動作確認は当環境では Chrome 実行不可のためユーザー実施

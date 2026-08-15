@@ -297,4 +297,14 @@
     → Google Cloud Console で「Chrome拡張」タイプの OAuth クライアントIDを、拡張IDに
       紐付けて作成する必要がある(ユーザーの GCP コンソール作業=manual-work M-4)。
     → 拡張IDを固定するため manifest に key を追加する。
-  - ステータス: 対応中(コードは Work 追加で実装、GCP設定は M-4 でユーザー実施)
+  - ステータス: 対応中(修正2回目)
+  - 【2026-08-15 不具合と修正】
+    * 症状: 拡張の「Googleでログイン」で "OAuth2 request failed: bad client id" エラー
+    * 原因: chrome.identity.getAuthToken は OAuth クライアントが「Chrome拡張機能
+      (Chromeアプリ)」タイプであることを要求する。作成されたクライアントがこの専用
+      タイプでない(Webアプリ等)ため "bad client id" になる。現行 GCP Console では
+      Chrome拡張タイプが選びにくく getAuthToken 方式は環境依存で不安定。
+    * 修正計画: getAuthToken → chrome.identity.launchWebAuthFlow 方式へ変更。
+      「Webアプリケーション」タイプのクライアント(作成済みのものを流用可)に
+      リダイレクトURI https://cenehhpmcohahgainnmpajjgfffdbjab.chromiumapp.org/ を
+      追加すれば動作する。id_token を取得し signInWithCredential でサインイン。

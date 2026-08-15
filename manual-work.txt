@@ -87,13 +87,31 @@ M-3. videoId 正規化マイグレーション(既存 posts データ)
    - M-1 デプロイ(新ルール適用)後に実行するのが安全(整合性のため)。
 
 ============================================================
-M-4. Chrome拡張のGoogleログイン用 OAuthクライアントID作成(GCP)
+M-4. Chrome拡張のGoogleログイン用 OAuth設定(GCP)
 ============================================================
-状態: [x] クライアントID設定済み(2026-08-15)。あとは拡張再読み込み+実機テストのみ
-  設定済みクライアントID:
+状態: [ ] 未完了(2026-08-15 方式変更: getAuthToken → launchWebAuthFlow)
+  【経緯】当初 getAuthToken 方式で実装したが "bad client id" エラー(=クライアントが
+    Chrome拡張タイプでない)。より堅牢な launchWebAuthFlow(Webアプリ型クライアント使用)
+    に変更した。→ 必要な設定は「リダイレクトURIの追加」のみ。
+
+  使用クライアントID(popup.js の GOOGLE_CLIENT_ID):
     1019921068987-ok1odk5kk0a6vgacjofn9rj1p4mdevii.apps.googleusercontent.com
-  残り: 拡張を再読み込み → 「Googleでログイン」で動作確認(M-2 に合流)。
-        弾かれる場合は OAuth 同意画面のテストユーザー追加/クライアント種別を確認。
+
+  手順(ユーザーの GCP コンソール作業):
+   1) GCP Console(プロジェクト nukebuy)→ APIとサービス → 認証情報
+   2) 上記クライアントIDの OAuth クライアントを開く
+      ※種類が「ウェブアプリケーション」であること(そうでない場合は新規に
+        「ウェブアプリケーション」型を作成し、その client ID を Claude に伝える)
+   3) 「承認済みのリダイレクト URI」に次を追加して保存:
+        https://cenehhpmcohahgainnmpajjgfffdbjab.chromiumapp.org/
+   4) 拡張を再読み込み(version 0.3.1)→「Googleでログイン」で動作確認
+   5) OAuth 同意画面が「テスト中」の場合、ログインする Google アカウントを
+      テストユーザーに追加
+
+  フォールバック(もし "invalid credential" 等で弾かれる場合):
+   - Firebase Console → Authentication → Sign-in method → Google の許可クライアントに
+     この client ID を追加、もしくは Firebase 自動生成の Web クライアントIDを使う。
+     その場合は Claude に連絡(GOOGLE_CLIENT_ID を差し替える)。
 
 背景:
   拡張に Google ログインを実装(chrome.identity.getAuthToken + Firebase
