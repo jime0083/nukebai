@@ -6,9 +6,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ログイン状態はローカル永続化(ポップアップを閉じても維持)
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
 // Google ログイン用 OAuth クライアントID(Webアプリ型。GCP でリダイレクトURI
 // https://<拡張ID>.chromiumapp.org/ を許可しておくこと。manual-work M-4)
 const GOOGLE_CLIENT_ID = '1019921068987-ok1odk5kk0a6vgacjofn9rj1p4mdevii.apps.googleusercontent.com';
@@ -53,7 +50,7 @@ function extractVideoId(url) {
   return '';
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
   const loadingView = document.getElementById('loadingView');
   const loginView = document.getElementById('loginView');
   const appView = document.getElementById('appView');
@@ -90,6 +87,16 @@ document.addEventListener('DOMContentLoaded', function () {
   function clearError(el) {
     el.textContent = '';
     el.style.display = 'none';
+  }
+
+  // ログイン状態を IndexedDB に永続化(ポップアップを閉じても維持)。
+  // ※ 認証状態の監視・ログイン処理より前に「await」で確実に適用する。
+  //   これが未適用のままサインインするとセッションがメモリ上のみになり、
+  //   ポップアップを閉じると失われる(=毎回ログインを求められる)。
+  try {
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  } catch (e) {
+    console.warn('setPersistence(LOCAL) に失敗しました:', e);
   }
 
   // 認証状態に応じて表示を切り替える
