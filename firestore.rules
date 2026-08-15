@@ -22,16 +22,19 @@ service cloud.firestore {
     }
 
     // users の保護フィールド(クライアントから書換不可。Cloud Functions/Admin SDK のみ)
+    // ※ ドキュメントによっては一部フィールドが欠落しているため、map.get(key, default) で
+    //   欠損に強くする(直接参照すると欠損時にルール評価エラー=拒否になり、
+    //   lastLoginAt 等の正当な更新まで弾いてしまう。B-2b)
     function protectedUserFieldsUnchanged() {
       let prev = resource.data;
       let next = request.resource.data;
-      return next.points == prev.points
-        && next.reportCount == prev.reportCount
-        && next.totalPosts == prev.totalPosts
-        && next.searchCount == prev.searchCount
-        && next.role == prev.role
-        && next.subscriptionStatus == prev.subscriptionStatus
-        && next.isUnlimited == prev.isUnlimited;
+      return next.get('points', 0) == prev.get('points', 0)
+        && next.get('reportCount', 0) == prev.get('reportCount', 0)
+        && next.get('totalPosts', 0) == prev.get('totalPosts', 0)
+        && next.get('searchCount', 0) == prev.get('searchCount', 0)
+        && next.get('role', 'user') == prev.get('role', 'user')
+        && next.get('subscriptionStatus', 'free') == prev.get('subscriptionStatus', 'free')
+        && next.get('isUnlimited', false) == prev.get('isUnlimited', false);
     }
 
     // 新規 users ドキュメントは保護フィールドを安全な初期値でのみ作成可

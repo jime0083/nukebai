@@ -84,6 +84,19 @@
         現行ルールで実際に可能なことを確認
   - ステータス: 調査完了・再定義済み(2026-08-14)。修正は Work 2-2 以降
 
+[B-2b] 【2026-08-15 本番不具合】ルールの保護フィールド判定が欠損フィールドで拒否
+  - 症状: ログイン済みで本番をフルリロードすると App.vue が「読み込み中」で固まり
+    年齢確認ページ等が表示されない(ヘッダーにユーザーは出る)。
+  - 原因: firestore.rules の protectedUserFieldsUnchanged() が next.totalPosts /
+    next.isUnlimited 等を直接参照。実際のユーザードキュメントは作成経路により
+    一部の保護フィールドが欠落(Google作成=totalPosts/isUnlimited無し、
+    Register作成=searchCount/reportCount無し)。欠損フィールド参照でルール評価が
+    エラー→更新拒否。→ App.vue の lastLoginAt 更新(merge)が失敗し、後続の
+    isLoading=false に到達せず無限ローディング。
+  - 修正: (1) ルールを map.get(field, default) で欠損に強くする
+          (2) App.vue の認証処理を try/finally 化し、書込失敗でも必ず isLoading=false
+  - ステータス: 修正中(2026-08-15)
+
 [B-2] ポイント/ユーザー統計の付与がクライアント側で行われている
   - 内容: stores/reviews.js submitReview() がクライアントから自分の users doc の
     points/reportCount/totalPosts を updateDoc している。ルールで users を本人
