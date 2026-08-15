@@ -66,6 +66,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const currentUserEmail = document.getElementById('currentUserEmail');
   const logoutButton = document.getElementById('logoutButton');
+  const redirectHint = document.getElementById('redirectHint');
+
+  // Google ログインのリダイレクトURI(GCP に登録が必要)を画面に明示
+  const REDIRECT_URI = chrome.identity.getRedirectURL();
+  if (redirectHint) {
+    redirectHint.textContent = 'Googleログイン用リダイレクトURI: ' + REDIRECT_URI;
+  }
 
   const videoIdInput = document.getElementById('videoId');
   const videoTitleInput = document.getElementById('videoTitle');
@@ -137,14 +144,13 @@ document.addEventListener('DOMContentLoaded', function () {
     googleLoginButton.disabled = true;
     googleLoginButton.textContent = 'ログイン中...';
 
-    const redirectUri = chrome.identity.getRedirectURL();
     const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
     const authUrl =
       'https://accounts.google.com/o/oauth2/v2/auth?' +
       new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         response_type: 'id_token',
-        redirect_uri: redirectUri,
+        redirect_uri: REDIRECT_URI,
         scope: 'openid email profile',
         nonce: nonce,
         prompt: 'select_account',
@@ -159,8 +165,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (chrome.runtime.lastError || !responseUrl) {
         showError(
           loginError,
-          'Googleログインに失敗しました。' +
-            (chrome.runtime.lastError ? chrome.runtime.lastError.message : '')
+          'Googleログインに失敗しました。GCP の承認済みリダイレクトURIに次を登録してください: ' +
+            REDIRECT_URI +
+            (chrome.runtime.lastError ? '（' + chrome.runtime.lastError.message + '）' : '')
         );
         resetButton();
         return;

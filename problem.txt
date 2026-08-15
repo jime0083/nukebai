@@ -308,3 +308,10 @@
       「Webアプリケーション」タイプのクライアント(作成済みのものを流用可)に
       リダイレクトURI https://cenehhpmcohahgainnmpajjgfffdbjab.chromiumapp.org/ を
       追加すれば動作する。id_token を取得し signInWithCredential でサインイン。
+  - 【2026-08-15 修正2の結果と追加対応】
+    * 症状: "bad client id" は解消したが、Google 側で "エラー400: redirect_uri_mismatch"。
+    * 原因: OAuth クライアントに登録した「承認済みリダイレクト URI」と、拡張が送信する
+      リダイレクトURI(chrome.identity.getRedirectURL())が完全一致していない
+      (末尾スラッシュ差異/別クライアントに登録/反映待ち のいずれか)。
+    * 対応: 拡張が送信する正確なリダイレクトURIを popup 画面とエラーに表示し、
+      それを GCP にそのまま登録してもらう(コピペミス排除)。コード自体は正しい。
