@@ -34,7 +34,7 @@ function closeMenu() {
     <div class="container header-container">
       <div class="logo-container">
         <router-link to="/" class="logo">
-          <img src="@/assets/images/logo3.png" alt="ヌケバイ ホーム" class="logo-image">
+          <img src="@/assets/images/logo4.png" alt="ヌケバイ ホーム" class="logo-image">
         </router-link>
       </div>
       
