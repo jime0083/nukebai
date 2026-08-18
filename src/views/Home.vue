@@ -100,6 +100,12 @@ const reportCards = [
 </script>
 
 <style scoped>
+/* App.vue の .main-content が flex+center のため、home-page を明示的に全幅にして
+   ヒーローの背景画像が画面幅いっぱいに広がるようにする */
+.home-page {
+  width: 100%;
+}
+
 @media (max-width: 1024px) {
   .home-page {
     overflow-x: hidden;
