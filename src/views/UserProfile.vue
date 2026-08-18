@@ -82,11 +82,11 @@ const handleSurvey = () => {
   height: 50px;
   border-radius: 50%;
   margin-right: 15px;
-  background-color: #e0e0e0; /* Light grey placeholder background */
+  background-color: var(--color-gray-light); /* Light grey placeholder background */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #757575; /* Icon color */
+  color: var(--color-secondary); /* Icon color */
 }
 
 .profile-avatar-placeholder svg {
@@ -122,13 +122,9 @@ const handleSurvey = () => {
 }
 
 .highlight-stat {
-  color: red;
+  color: var(--color-primary);
   font-size: 1.3em; /* Relative to parent p's font-size */
   font-weight: bold;
-}
-
-.redeem-coupon-button:hover {
-  background-color: var(--color-secondary-dark, #367c39);
 }
 
 .loading-message {
@@ -142,25 +138,25 @@ const handleSurvey = () => {
   margin-top: 20px;
   margin-bottom: 20px;
   padding: 15px;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface);
   border-radius: var(--border-radius-md);
-  border-left: 4px solid var(--color-primary, #007bff);
+  border-left: 4px solid var(--color-primary);
 }
 
 .survey-section h3 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: var(--color-primary, #007bff);
+  color: var(--color-primary);
 }
 
 .survey-section p {
   margin-bottom: 15px;
   font-size: 0.95em;
-  color: #555;
+  color: var(--color-on-surface-variant);
 }
 
 .survey-button {
-  background-color: var(--color-primary, #007bff);
+  background-color: var(--color-primary);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -171,6 +167,6 @@ const handleSurvey = () => {
 }
 
 .survey-button:hover {
-  background-color: var(--color-primary-dark, #0056b3);
+  background-color: var(--color-primary-hover);
 }
 </style>

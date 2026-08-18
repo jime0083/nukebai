@@ -97,8 +97,8 @@ h2:after {
 }
 
 .about-text-column {
-  background-color: #121212;
-  color: #e0e0e0;
+  background-color: var(--color-background);
+  color: var(--color-on-surface-variant);
   padding: 15px 0;
   border-radius: var(--border-radius-lg);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);

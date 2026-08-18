@@ -90,6 +90,6 @@
 }
 
 .home-link:hover {
-  background-color: var(--color-primary-hover, #c82333);
+  background-color: var(--color-primary-hover);
 }
 </style>

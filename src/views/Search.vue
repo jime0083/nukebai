@@ -320,7 +320,7 @@ const sortedReasonCounts = computed(() => {
 }
 
 .report-link-button:hover {
-  background-color: var(--color-primary-dark, #c82333);
+  background-color: var(--color-primary-dark);
 }
 
 .reason-summary {

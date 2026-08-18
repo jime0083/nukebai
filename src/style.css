@@ -1,27 +1,44 @@
 :root {
   /* Color palette */
-  --color-background: #121212;
-  --color-surface: #1e1e1e;
-  --color-surface-variant: #2a2a2a;
-  --color-on-surface: rgba(255, 255, 255, 0.87);
-  --color-on-surface-variant: rgba(255, 255, 255, 0.6);
-  
-  --color-primary: #e53935;
-  --color-primary-hover: #f44336;
-  --color-primary-active: #c62828;
+  /* 背景・サーフェス(ダーク: portfolio-2025 のグレー寄りに統一) */
+  --color-background: #343434;
+  --color-surface: #444444;
+  --color-surface-variant: #555555;
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #cccccc;
+
+  /* プライマリ(ブランド=ピンク #D1597B) */
+  --color-primary: #D1597B;
+  --color-primary-hover: #b04665;
+  --color-primary-active: #9c3f57;
+  --color-primary-dark: #b04665;
   --color-on-primary: #ffffff;
-  
-  --color-secondary: #424242;
-  --color-secondary-hover: #616161;
+
+  /* セカンダリ(グレー) */
+  --color-secondary: #666666;
+  --color-secondary-hover: #777777;
+  --color-secondary-dark: #555555;
   --color-on-secondary: #ffffff;
-  
-  --color-accent: #7b1fa2;
-  --color-accent-hover: #9c27b0;
+
+  /* アクセント(明るいピンク) */
+  --color-accent: #ff6b81;
+  --color-accent-hover: #e85971;
   --color-on-accent: #ffffff;
-  
+
+  /* 罫線・淡色 */
+  --color-border: #666666;
+  --color-silver: #c0c0c0;
+  --color-gray-light: #d9d9d9;
+
+  /* 状態色(意味色は維持) */
   --color-error: #d32f2f;
+  --color-error-dark: #b71c1c;
+  --color-on-error: #ffffff;
   --color-warning: #f57c00;
   --color-success: #388e3c;
+
+  /* 影 */
+  --shadow-elevation-2: 0 4px 6px rgba(0, 0, 0, 0.3);
   
   /* Typography */
   font-family: 'Noto Sans JP', sans-serif;
@@ -160,7 +177,7 @@ input, textarea, select {
   padding: 0.75em;
   margin-bottom: var(--space-md);
   background-color: var(--color-surface-variant);
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   color: var(--color-on-surface);
   font-family: inherit;

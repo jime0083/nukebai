@@ -116,7 +116,7 @@ p {
 }
 
 .checkbox-container:hover input ~ .checkmark {
-  background-color: rgba(229, 57, 53, 0.1);
+  background-color: rgba(209, 89, 123, 0.12);
 }
 
 .checkbox-container input:checked ~ .checkmark {

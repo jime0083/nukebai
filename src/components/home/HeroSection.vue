@@ -57,7 +57,7 @@ defineProps({
 }
 
 .hero-content h1.main-catchphrase :deep(.highlight-red) {
-  color: #ff4d4d;
+  color: var(--color-accent);
   font-size: 4rem;
   font-weight: bolder;
 }

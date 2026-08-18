@@ -36,7 +36,7 @@
 }
 
 .fixed-bottom-try-free-button {
-  background-color: var(--color-error, #ff4d4d);
+  background-color: var(--color-primary);
   color: white;
   padding: 15px 30px;
   border-radius: var(--border-radius-lg, 8px);
@@ -50,7 +50,7 @@
 }
 
 .fixed-bottom-try-free-button:hover {
-  background-color: var(--color-error-dark, #d93636);
+  background-color: var(--color-primary-hover);
   transform: translateY(-2px);
 }
 
