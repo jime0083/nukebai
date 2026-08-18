@@ -49,14 +49,21 @@ function closeMenu() {
           <li><router-link to="/submit-review" @click="closeMenu">報告</router-link></li>
           <li><router-link to="/search" @click="closeMenu">検索</router-link></li>
           <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">ログイン</router-link></li>
+          <!-- デスクトップ: アバター+名前クリックでドロップダウン表示 -->
           <li v-if="isLoggedIn" class="user-menu">
             <img v-if="userStore.user && userStore.user.photoURL" :src="userStore.user.photoURL" alt="User Avatar" class="user-avatar" @click="toggleMenu" />
             <span v-if="userStore.user && userStore.user.displayName" class="user-name" @click="toggleMenu">{{ userStore.user.displayName }}</span>
-            <!-- Basic dropdown for logout for now, can be expanded -->
             <div class="dropdown-menu" v-if="showMenu">
               <router-link :to="{ name: 'UserProfile' }" @click="closeMenu">プロフィール</router-link>
               <a href="#" @click.prevent="logout(); closeMenu();">ログアウト</a>
             </div>
+          </li>
+          <!-- モバイル(ハンバーガー): 報告/検索と同じ並びでフラットに表示 -->
+          <li v-if="isLoggedIn" class="mobile-user-link">
+            <router-link :to="{ name: 'UserProfile' }" @click="closeMenu">プロフィール</router-link>
+          </li>
+          <li v-if="isLoggedIn" class="mobile-user-link">
+            <a href="#" @click.prevent="logout(); closeMenu();">ログアウト</a>
           </li>
         </ul>
       </nav>
@@ -211,10 +218,24 @@ function closeMenu() {
   color: var(--color-primary);
 }
 
+/* モバイル用のフラットなユーザーリンクはデスクトップでは非表示 */
+.mobile-user-link {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .menu-toggle {
     display: block;
     z-index: 110;
+  }
+
+  /* モバイルではアバター+ドロップダウンをやめ、フラットなリンクに切り替える */
+  .user-menu {
+    display: none;
+  }
+
+  .mobile-user-link {
+    display: block;
   }
   
   .main-nav {
