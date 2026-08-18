@@ -151,3 +151,120 @@
 
 付録B. 未使用アセットの色(サイトUIには影響しない)
   src/assets/vue.svg: #41B883 #35495E(Vue公式ロゴの緑・紺。テンプレート由来で未使用)
+
+
+#####################################################################
+# 第2部: 新カラールール(統一後・実装対象)  ※2026-08-18 追記
+#####################################################################
+# 目的: portfolio-2025 のカラー仕様書のピンク系パレットに、ヌケバイの色を統一する。
+# 参照元: /Users/jime0083/Local Sites/port-2025/.../portfolio-2025/仕様.txt
+# ※第1部(現状調査)はそのまま保持。以降が「変更後のあるべき色」。
+
+=====================================================================
+A. ユーザー決定事項(2026-08-18)
+=====================================================================
+  1. 背景: ヌケバイの非常に暗い #121212/#1e1e1e を、仕様書のグレー寄りダーク
+     #343434/#333 系に変更する。
+  2. 意味色: エラー(赤)/警告(橙)/成功(緑)は「維持」する。ブランド色のみピンク化。
+  3. ロゴ画像(「NukeBye」赤): CSSでは変更不可のため今回はCSSの色のみ統一し、
+     赤ロゴのピンク版差し替えは manual-work.txt に保留タスクとして記録(別途対応)。
+  4. Googleログインボタンの青(#4285f4/#357ae8)は Google ブランド色のため維持。
+
+=====================================================================
+B. 新デザイントークン(src/style.css :root に設定する値)
+   ← ここが新しい「基準色」。旧値からの変更を併記。
+=====================================================================
+
+--- 背景・サーフェス(ダーク: ポートフォリオのグレー寄りに変更) ---
+  --color-background         : #343434   (旧 #121212)
+  --color-surface            : #444444   (旧 #1e1e1e / カード等の面)
+  --color-surface-variant    : #555555   (旧 #2a2a2a / 入力欄・一段明るい面)
+
+--- テキスト(白・淡) ---
+  --color-on-surface         : #ffffff   (旧 rgba(255,255,255,0.87))
+  --color-on-surface-variant : #cccccc   (旧 rgba(255,255,255,0.6) / 補助テキスト)
+
+--- プライマリ(ブランド=ピンク)★赤から全面変更 ---
+  --color-primary            : #D1597B   (旧 #e53935)
+  --color-primary-hover      : #b04665   (旧 #f44336 / ホバーは濃いピンク)
+  --color-primary-active     : #9c3f57   (旧 #c62828)
+  --color-primary-dark       : #b04665   (★新規定義。旧は未定義だった)
+  --color-on-primary         : #ffffff   (変更なし)
+
+--- アクセント(明るいピンク)★紫から変更 ---
+  --color-accent             : #ff6b81   (旧 #7b1fa2)
+  --color-accent-hover       : #e85971   (旧 #9c27b0)
+  --color-on-accent          : #ffffff   (変更なし)
+
+--- セカンダリ(グレー) ---
+  --color-secondary          : #666666   (旧 #424242)
+  --color-secondary-hover    : #777777   (旧 #616161)
+  --color-secondary-dark     : #555555   (★新規定義。旧は未定義だった)
+  --color-on-secondary       : #ffffff   (変更なし)
+
+--- 罫線・淡色(ポートフォリオ由来。新規に追加) ---
+  --color-border             : #666666   (★新規。入力枠等)
+  --color-silver             : #c0c0c0   (★新規。淡色地・境界)
+  --color-gray-light         : #d9d9d9   (★新規。プレースホルダ地色)
+
+--- 状態色(意味色は維持=値そのまま。ただし未定義だった派生色を追加) ---
+  --color-error              : #d32f2f   (維持)
+  --color-error-dark         : #b71c1c   (★新規定義)
+  --color-on-error           : #ffffff   (★新規定義)
+  --color-warning            : #f57c00   (維持)
+  --color-success            : #388e3c   (維持)
+
+--- 影(未定義だったものを定義) ---
+  --shadow-elevation-2       : 0 4px 6px rgba(0,0,0,0.3)   (★新規定義)
+
+=====================================================================
+C. ハードコード色の置換ルール(第1部セクション3の各箇所をこう変える)
+=====================================================================
+
+--- 赤系ハードコード → ピンクへ ---
+  #ff4d4d  (HeroSection ヒーロー強調)      → var(--color-accent) #ff6b81
+  #ff4d4d  (BottomCta 背景フォールバック)  → var(--color-primary) #D1597B
+  #c82333  (Search/Subscription/Contract) → var(--color-primary-hover) #b04665
+  #d93636  (BottomCta hover)               → var(--color-primary-hover) #b04665
+  color: red (UserProfile .highlight-stat) → var(--color-primary) #D1597B
+
+--- 青系(UserProfile)→ ブランドピンクへ(Googleボタンは除く) ---
+  #007bff  (UserProfile ボタン背景)        → var(--color-primary) #D1597B
+  #0056b3  (UserProfile ボタンhover)       → var(--color-primary-hover) #b04665
+  #367c39 / --color-secondary-dark 代用    → var(--color-primary-hover) #b04665
+  ※ #4285f4 / #357ae8(Login Googleボタン)= 維持
+
+--- グレー・その他ハードコード → 新トークンへ ---
+  #121212 (AboutSection about欄背景)       → var(--color-background) #343434
+  #e0e0e0 (AboutSection/UserProfile 文字)  → var(--color-on-surface-variant) #cccccc
+  #757575 / #888 / #555 (UserProfile 各グレー) → var(--color-on-surface-variant) #cccccc
+  #333    (style.css input border)         → var(--color-border) #666666
+  #f8f9fa (UserProfile 明るい地色)         → var(--color-surface-variant) #555555
+  #388e3c (Login 成功メッセージ文字)       → var(--color-success)(意味色維持)
+  color: white 各所                        → 維持(var(--color-on-primary) 等)
+
+--- 赤味の半透明(rgba)→ ピンク味へ ---
+  rgba(229, 57, 53, 0.1)  (旧primary #e53935 の淡い下地) → rgba(209, 89, 123, 0.12)
+                                                           (新primary #D1597B ベース)
+  rgba(211, 47, 47, 0.1)  (エラー背景)   → 維持(意味色=エラー)
+  rgba(56, 142, 60, 0.1〜0.12) (成功背景) → 維持(意味色=成功)
+  rgba(0,0,0,*) / rgba(255,255,255,*)     → 維持(影・暗幕・罫線)
+
+=====================================================================
+D. 実装対象ファイル(第1部の調査に基づく)
+=====================================================================
+  基準: src/style.css(:root と共通クラス)
+  個別: src/components/home/{HeroSection,AboutSection,BottomCta}.vue
+        src/views/{UserProfile,Login,Search,Subscription,ContractManagement,
+                   SubmitReview,AgeVerification}.vue
+        src/components/{reviews/ReviewCard,reviews/ReviewForm,
+                        layout/TheHeader,common/AgeVerification}.vue
+  ※ TheFooter.vue は変数のみ使用のため style.css の変数変更で自動追従。
+  ※ Chrome拡張(popup.html)は独自ハードコードのため、統一する場合は別途対応(任意)。
+
+=====================================================================
+E. 保留・別対応(manual-work 化)
+=====================================================================
+  - ヘッダーの赤ロゴ画像(logo3.png 等)のピンク版差し替え(画像編集が必要)。
+  - Chrome拡張(popup.html)の配色統一(任意)。
+
