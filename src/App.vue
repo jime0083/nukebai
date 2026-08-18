@@ -19,7 +19,7 @@ onMounted(() => {
     <main class="main-content">
       <div v-if="isLoading" class="loading-container">
         <div class="loading-spinner"></div>
-        <p>読み込み中...</p>
+        <p class="loading-text">読み込み中...</p>
       </div>
       <router-view v-else />
     </main>
@@ -48,6 +48,11 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 50vh;
+}
+
+/* ローディング文言は欧文サンセリフスタック(仕様書 6-2) */
+.loading-text {
+  font-family: var(--font-sans);
 }
 
 .loading-spinner {

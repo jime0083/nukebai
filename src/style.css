@@ -40,8 +40,14 @@
   /* 影 */
   --shadow-elevation-2: 0 4px 6px rgba(0, 0, 0, 0.3);
   
-  /* Typography */
-  font-family: 'Noto Sans JP', sans-serif;
+  /* Typography(Webフォント不使用・OS標準のフォントスタック) */
+  /* 明朝体スタック(サイト全体の基本フォント) */
+  --font-serif: 游明朝, YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", HG明朝E,
+    "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+  /* 欧文サンセリフ スタック(英字・ローディング用) */
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  font-family: var(--font-serif);
   line-height: 1.5;
   font-weight: 400;
 
