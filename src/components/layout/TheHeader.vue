@@ -130,10 +130,12 @@ function closeMenu() {
 
 .main-nav {
   display: flex;
+  align-items: center;
 }
 
 .nav-list {
   display: flex;
+  align-items: center; /* ロゴ・報告・検索・アイコン・ユーザー名を垂直中央に揃える */
   list-style: none;
   margin: 0;
   padding: 0;
