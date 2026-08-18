@@ -203,6 +203,7 @@ function closeMenu() {
   text-decoration: none;
   border-radius: var(--border-radius-sm);
   font-size: 0.9rem; /* Smaller font for dropdown items */
+  white-space: nowrap; /* 「プロフィール」等が折り返さず常に1行で収まるようにする */
 }
 
 .dropdown-menu a:hover {
